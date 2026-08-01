@@ -236,13 +236,13 @@ _ANNOT_PREFIX = re.compile(r"^(?:\s*@\w+(?:\([^)]*\))?\s*)+")
 _METHOD_RE = re.compile(
     _MODS_PAT
     + r"(?:<[^>]+>\s+)?"                          # optional method-level type params
-    + r"(?P<ret>[\w<>\[\],\.\?]+(?:\[\])*)\s+"
+    + r"(?P<ret>[\w<>\[\],\.\? ]+(?:\[\])*)\s+"
     + r"(?P<name>\w+)\s*"
     + r"\((?P<params>[^)]*)\)",
 )
 _FIELD_RE = re.compile(
     _MODS_PAT
-    + r"(?P<type>[\w<>\[\],\.\?]+(?:\[\])*)\s+"
+    + r"(?P<type>[\w<>\[\],\.\? ]+(?:\[\])*)\s+"
     + r"(?P<name>\w+)",
 )
 
@@ -339,8 +339,8 @@ def _parse_record_components(raw: str | None) -> list[tuple[str, str]]:
         p = p.replace("...", "[]")
         tokens = p.rsplit(None, 1)
         if len(tokens) == 2:
-            type_str, pname = tokens
-            fields.append((pname, type_str))
+            component_type, component_name = tokens
+            fields.append((component_name, component_type))
     return fields
 
 
@@ -568,8 +568,8 @@ def _build_uses_rels(
         newed_types = _collect_newed_types(d["body"])
 
         # Record components behave like public fields (accessed via public accessor)
-        for pname, ptype in _parse_record_components(d.get("record_params")):
-            fp_items.append((ptype, True))
+        for component_name, component_type in _parse_record_components(d.get("record_params")):
+            fp_items.append((component_type, True))
 
         field_info: dict[str, dict[str, bool]] = {}
         for type_str, is_pub in fp_items:
@@ -628,13 +628,13 @@ def _gen_interface(name: str, body: str, lines: list[str]):
         if not stmt:
             continue
         # Method
-        m = re.match(r"([\w<>\[\],\.\?]+(?:\[\])*)\s+(\w+)\s*(?:<[^>]+>)?\s*\(([^)]*)\)", stmt)
+        m = re.match(r"([\w<>\[\],\.\? ]+)\s+(\w+)\s*(?:<[^>]+>)?\s*\(([^)]*)\)", stmt)
         if m:
             lines.append(f"  + {m.group(2)}({_simplify_params(m.group(3))}) : {m.group(1)}")
             continue
         # Constant field
         if stmt.endswith(";"):
-            m = re.match(r"([\w<>\[\],\.\?]+(?:\[\])*)\s+(\w+)", stmt)
+            m = re.match(r"([\w<>\[\],\.\? ]+)\s+(\w+)", stmt)
             if m:
                 lines.append(f"  + {{static}} {m.group(2)} : {m.group(1)}")
     lines.append("}")
@@ -674,6 +674,11 @@ def _assemble(
     return full, body
 
 
+def _write_file(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def generate_puml(
     java_path: Path,
     out_path: Path,
@@ -711,8 +716,8 @@ def generate_puml(
         elif kind == "record":
             stereo = _class_stereotype(mods, kind)
             inner_lines.append(f"class {name} {stereo} {{")
-            for pname, ptype in _parse_record_components(d["record_params"]):
-                inner_lines.append(f"  + {pname} : {_uml_type(ptype)}")
+            for component_name, component_type in _parse_record_components(d["record_params"]):
+                inner_lines.append(f"  + {component_name} : {_uml_type(component_type)}")
             fields, methods = _parse_members(body, name)
             for f in fields:
                 inner_lines.append(f"  {f}")
@@ -746,11 +751,8 @@ def generate_puml(
 
     # Base output (extends/implements only)
     base_all, base_body = _assemble(java_path.stem, package, inner_lines, rels, [])
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(base_all), encoding="utf-8")
-    frag_path.parent.mkdir(parents=True, exist_ok=True)
-    frag_path.write_text("\n".join(base_body), encoding="utf-8")
+    _write_file(out_path, base_all)
+    _write_file(frag_path, base_body)
 
     # Full output (adds *-->, -->, ..> for project types used in members)
     if known_types is not None and full_out_path is not None and full_frag_path is not None:
@@ -758,20 +760,56 @@ def generate_puml(
 
         if compose_rels:
             base_all, base_body = _assemble(java_path.stem, package, inner_lines, rels, compose_rels)
-            out_path.write_text("\n".join(base_all), encoding="utf-8")
-            frag_path.write_text("\n".join(base_body), encoding="utf-8")
+            _write_file(out_path, base_all)
+            _write_file(frag_path, base_body)
 
         full_all, full_body = _assemble(java_path.stem, package, inner_lines, rels, compose_rels + other_rels)
-
-        full_out_path.parent.mkdir(parents=True, exist_ok=True)
-        full_out_path.write_text("\n".join(full_all), encoding="utf-8")
-        full_frag_path.parent.mkdir(parents=True, exist_ok=True)
-        full_frag_path.write_text("\n".join(full_body), encoding="utf-8")
+        _write_file(full_out_path, full_all)
+        _write_file(full_frag_path, full_body)
 
     return True
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
+
+_STATUS_OK = "OK"
+_STATUS_SKIPPED = "SKIPPED"
+_STATUS_ERROR = "ERROR"
+
+
+def _generate_one(java_file: Path, src_root: Path, out_dirs: tuple[Path, Path, Path, Path], known_types: set[str]) -> str:
+    """Generate all four diagram variants for one file. Returns a status string
+    and prints the per-file result line."""
+    out_root, frag_root, full_out_root, full_frag_root = out_dirs
+    rel = java_file.relative_to(src_root)
+    out = out_root / rel.with_suffix(".puml")
+    frag = frag_root / rel.with_suffix(".puml")
+    full_out = full_out_root / rel.with_suffix(".puml")
+    full_frag = full_frag_root / rel.with_suffix(".puml")
+
+    try:
+        if generate_puml(java_file, out, frag, full_out, full_frag, known_types):
+            print(f"  OK     {rel}")
+            return _STATUS_OK
+        print(f"  SKIP   {rel}  (no type declarations)")
+        return _STATUS_SKIPPED
+    except Exception as exc:
+        print(f"  ERROR  {rel}  — {exc}")
+        return _STATUS_ERROR
+
+
+def _collect_known_types(java_files: list[Path]) -> set[str]:
+    known_types: set[str] = set()
+    for jf in java_files:
+        try:
+            raw = jf.read_text(encoding="utf-8", errors="replace")
+            src = _strip_strings(_strip_comments(raw))
+            for d in _find_type_decls(src):
+                known_types.add(d["name"].split("<")[0])
+        except Exception:
+            pass
+    return known_types
+
 
 def main() -> None:
     if len(sys.argv) < 2:
@@ -791,36 +829,15 @@ def main() -> None:
     java_files = sorted(src_root.rglob("*.java"))
     print(f"Found {len(java_files)} .java files under {src_root}")
 
-    # First pass: collect all declared type names
-    known_types: set[str] = set()
-    for jf in java_files:
-        try:
-            raw = jf.read_text(encoding="utf-8", errors="replace")
-            src = _strip_strings(_strip_comments(raw))
-            for d in _find_type_decls(src):
-                known_types.add(d["name"].split("<")[0])
-        except Exception:
-            pass
+    known_types = _collect_known_types(java_files)
     print(f"  {len(known_types)} known project types for uses-detection")
 
-    ok = skipped = errors = 0
-    for jf in java_files:
-        rel = jf.relative_to(src_root)
-        out = out_root / rel.with_suffix(".puml")
-        frag = frag_root / rel.with_suffix(".puml")
-        full_out = full_out_root / rel.with_suffix(".puml")
-        full_frag = full_frag_root / rel.with_suffix(".puml")
-        try:
-            if generate_puml(jf, out, frag, full_out, full_frag, known_types):
-                print(f"  OK     {rel}")
-                ok += 1
-            else:
-                print(f"  SKIP   {rel}  (no type declarations)")
-                skipped += 1
-        except Exception as exc:
-            print(f"  ERROR  {rel}  — {exc}")
-            errors += 1
+    out_dirs = (out_root, frag_root, full_out_root, full_frag_root)
+    results = [_generate_one(jf, src_root, out_dirs, known_types) for jf in java_files]
 
+    ok = results.count(_STATUS_OK)
+    skipped = results.count(_STATUS_SKIPPED)
+    errors = results.count(_STATUS_ERROR)
     print(f"\nDone: {ok} generated, {skipped} skipped, {errors} errors.")
 
 
