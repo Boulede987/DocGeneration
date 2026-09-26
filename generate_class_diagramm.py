@@ -649,20 +649,115 @@ def _assemble(
     extra_rels: list[str],
 ) -> tuple[list[str], list[str]]:
     """Returns (full_lines, body_lines).
-    body_lines has no @startuml, skinparam, or @enduml — for use as fragment."""
+    body_lines has no @startuml, skinparam, or @enduml — for use as fragment.
+
+    Relation lines go after the namespace block and must use fully-qualified
+    names: inside the block, PlantUML creates every undeclared target in
+    this file's namespace, even when it belongs to another one."""
     body: list[str] = []
     if namespace:
         body.append(f"namespace {namespace} {{")
     body.extend(inner_lines)
+    if namespace:
+        body.append("}")
     body.append("")
     body.extend(rels)
     if extra_rels:
         body.extend(extra_rels)
-    if namespace:
-        body.append("}")
 
     full = [f"@startuml {stem}", ""] + _SKINPARAM_LINES + [""] + body + ["", "@enduml"]
     return full, body
+
+
+# ── Namespace resolution ──────────────────────────────────────────────────────
+
+_NAMESPACE_RE = re.compile(r"\bnamespace\s+([\w.]+)")
+_USING_RE = re.compile(r"^\s*(?:global\s+)?using\s+([\w.]+)\s*;", re.MULTILINE)
+
+
+def _parse_namespace(src: str) -> str | None:
+    ns_m = _NAMESPACE_RE.search(src)
+    return ns_m.group(1) if ns_m else None
+
+
+def _collect_type_namespaces(cs_files: list[Path]) -> dict[str, set[str | None]]:
+    """Simple name -> namespace(s) declaring it, for every project type. A
+    name maps to several namespaces when unrelated namespaces reuse it."""
+    type_namespaces: dict[str, set[str | None]] = {}
+    for cs in cs_files:
+        try:
+            raw = cs.read_text(encoding="utf-8", errors="replace")
+            src = _strip_strings(_strip_comments(raw))
+            namespace = _parse_namespace(src)
+            for d in _find_type_decls(src):
+                type_namespaces.setdefault(d["name"].split("<")[0], set()).add(namespace)
+        except Exception:
+            pass
+    return type_namespaces
+
+
+def _enclosing_namespaces(namespace: str | None) -> list[str | None]:
+    """A.B.C -> [A.B.C, A.B, A, None]: every namespace whose types are
+    visible without a using directive, closest first (None = global)."""
+    chain: list[str | None] = []
+    parts = namespace.split(".") if namespace else []
+    while parts:
+        chain.append(".".join(parts))
+        parts.pop()
+    chain.append(None)
+    return chain
+
+
+def _resolve_namespace(
+    name: str,
+    own_namespace: str | None,
+    own_names: set[str],
+    usings: set[str],
+    type_namespaces: dict[str, set[str | None]],
+) -> str | None:
+    """Namespace a referenced type lives in, or None when it can't be
+    determined (non-project type, or a simple name declared in several
+    namespaces with nothing to disambiguate) — such types are drawn outside
+    any namespace rather than guessed into one. Unlike Java imports, C#
+    using directives name namespaces, not types, so non-project types can't
+    be placed."""
+    if name in own_names:
+        return own_namespace
+    candidates = type_namespaces.get(name, set())
+    for namespace in _enclosing_namespaces(own_namespace):
+        if namespace in candidates:
+            return namespace
+    used = candidates & usings
+    if len(used) == 1:
+        return next(iter(used))
+    if len(candidates) == 1:
+        return next(iter(candidates))
+    return None
+
+
+def _qualify_rels(
+    rel_lines: list[str],
+    own_namespace: str | None,
+    own_names: set[str],
+    src: str,
+    type_namespaces: dict[str, set[str | None]],
+) -> list[str]:
+    """Rewrite both ends of each relation line ('Left op ... Right') to their
+    fully-qualified name, so they land in the right namespace when emitted
+    outside this file's namespace block."""
+    usings = set(_USING_RE.findall(src))
+
+    def qualified(name: str) -> str:
+        namespace = _resolve_namespace(name, own_namespace, own_names, usings, type_namespaces)
+        return f"{namespace}.{name}" if namespace else name
+
+    result: list[str] = []
+    for line in rel_lines:
+        tokens = line.split(" ")
+        tokens[0] = qualified(tokens[0])
+        tokens[-1] = qualified(tokens[-1])
+        result.append(" ".join(tokens))
+    return result
 
 
 def generate_puml(
@@ -671,13 +766,14 @@ def generate_puml(
     frag_path: Path,
     full_out_path: Path | None = None,
     full_frag_path: Path | None = None,
-    known_types: set[str] | None = None,
+    type_namespaces: dict[str, set[str | None]] | None = None,
 ) -> bool:
+    """type_namespaces maps every project type's simple name to the
+    namespace(s) declaring it; without it, only the base diagram is written."""
     raw = cs_path.read_text(encoding="utf-8", errors="replace")
     src = _strip_strings(_strip_comments(raw))
 
-    ns_m = re.search(r"\bnamespace\s+([\w.]+)", src)
-    namespace = ns_m.group(1) if ns_m else None
+    namespace = _parse_namespace(src)
 
     decls = _find_type_decls(src)
     if not decls:
@@ -726,6 +822,13 @@ def generate_puml(
             targets.add(t)
         inherit_by_left[left] = targets
 
+    own_names = set(inherit_by_left)
+
+    def qualify(rel_lines: list[str]) -> list[str]:
+        return _qualify_rels(rel_lines, namespace, own_names, src, type_namespaces or {})
+
+    rels = qualify(rels)
+
     # Base output (inherits/implements only)
     base_all, base_body = _assemble(cs_path.stem, namespace, inner_lines, rels, [])
 
@@ -735,8 +838,10 @@ def generate_puml(
     frag_path.write_text("\n".join(base_body), encoding="utf-8")
 
     # Full output (adds *-->, o-->, -->, ..> for project types used in members)
-    if known_types is not None and full_out_path is not None and full_frag_path is not None:
-        compose_rels, other_rels = _build_uses_rels(decls, known_types, inherit_by_left)
+    if type_namespaces is not None and full_out_path is not None and full_frag_path is not None:
+        compose_rels, other_rels = _build_uses_rels(decls, set(type_namespaces), inherit_by_left)
+        compose_rels = qualify(compose_rels)
+        other_rels = qualify(other_rels)
 
         # Base diagram also gets composition (*-->) — strong structural relation
         if compose_rels:
@@ -774,17 +879,9 @@ def main() -> None:
     cs_files = sorted(src_root.rglob("*.cs"))
     print(f"Found {len(cs_files)} .cs files under {src_root}")
 
-    # First pass: collect all declared type names
-    known_types: set[str] = set()
-    for cs in cs_files:
-        try:
-            raw = cs.read_text(encoding="utf-8", errors="replace")
-            src = _strip_strings(_strip_comments(raw))
-            for d in _find_type_decls(src):
-                known_types.add(d["name"].split("<")[0])
-        except Exception:
-            pass
-    print(f"  {len(known_types)} known project types for uses-detection")
+    # First pass: collect all declared type names and their namespaces
+    type_namespaces = _collect_type_namespaces(cs_files)
+    print(f"  {len(type_namespaces)} known project types for uses-detection")
 
     ok = skipped = errors = 0
     for cs in cs_files:
@@ -794,7 +891,7 @@ def main() -> None:
         full_out  = full_out_root  / rel.with_suffix(".puml")
         full_frag = full_frag_root / rel.with_suffix(".puml")
         try:
-            if generate_puml(cs, out, frag, full_out, full_frag, known_types):
+            if generate_puml(cs, out, frag, full_out, full_frag, type_namespaces):
                 print(f"  OK     {rel}")
                 ok += 1
             else:
