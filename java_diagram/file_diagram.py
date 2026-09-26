@@ -16,7 +16,14 @@ from .type_format import uml_type
 
 
 PACKAGE_RE = re.compile(r"\bpackage\s+([\w.]+)\s*;")
-IMPORT_RE = re.compile(r"^\s*import\s+(?!static\b)([\w.]+)\.([A-Z]\w*)\s*;", re.MULTILINE)
+# Package segments are lowercase by convention; the first capitalized
+# segment starts the type path, so a nested-type import like
+# 'a.b.Outer.Inner' resolves Inner to package 'a.b', not to 'a.b.Outer' —
+# a class name used as a namespace crashes PlantUML.
+IMPORT_RE = re.compile(
+    r"^\s*import\s+(?!static\b)((?:[a-z_]\w*\.)*[a-z_]\w*)\.(?:[A-Z]\w*\.)*([A-Z]\w*)\s*;",
+    re.MULTILINE,
+)
 
 
 def _render_type(d: dict, inner_lines: list[str]) -> None:
