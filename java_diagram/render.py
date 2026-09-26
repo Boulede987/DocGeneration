@@ -101,17 +101,21 @@ def assemble(
     extra_rels: list[str],
 ) -> tuple[list[str], list[str]]:
     """Returns (full_lines, body_lines).
-    body_lines has no @startuml, skinparam, or @enduml — for use as fragment."""
+    body_lines has no @startuml, skinparam, or @enduml — for use as fragment.
+
+    Relation lines go after the namespace block and must use fully-qualified
+    names: inside the block, PlantUML creates every undeclared target in
+    this file's package, even when it belongs to another one."""
     body: list[str] = []
     if package:
         body.append(f"namespace {package} {{")
     body.extend(inner_lines)
+    if package:
+        body.append("}")
     body.append("")
     body.extend(rels)
     if extra_rels:
         body.extend(extra_rels)
-    if package:
-        body.append("}")
 
     full = [f"@startuml {stem}", ""] + SKINPARAM_LINES + [""] + body + ["", "@enduml"]
     return full, body

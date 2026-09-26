@@ -13,6 +13,10 @@ from .source_parsing import find_type_decls, strip_comments, strip_strings
 from .type_format import uml_type
 
 
+PACKAGE_RE = re.compile(r"\bpackage\s+([\w.]+)\s*;")
+IMPORT_RE = re.compile(r"^\s*import\s+(?!static\b)([\w.]+)\.([A-Z]\w*)\s*;", re.MULTILINE)
+
+
 class FileDiagram:
     def __init__(
         self,
@@ -23,6 +27,7 @@ class FileDiagram:
         rels: list[str],
         compose_rels: list[str],
         other_rels: list[str],
+        name_packages: dict[str, str | None],
     ):
         self.stem = stem
         self.package = package
@@ -31,6 +36,24 @@ class FileDiagram:
         self.rels = rels
         self.compose_rels = compose_rels
         self.other_rels = other_rels
+        self.name_packages = name_packages
+
+    def qualify_rels(self, rel_lines: list[str]) -> list[str]:
+        """Rewrite both ends of each relation line to their fully-qualified
+        name. Relations are emitted outside the file's namespace block, so an
+        unqualified name lands at top level instead of being silently created
+        inside this file's package."""
+        return [self._qualify_rel(line) for line in rel_lines]
+
+    def _qualify_rel(self, rel_line: str) -> str:
+        tokens = rel_line.split(" ")
+        tokens[0] = self._qualified_name(tokens[0])
+        tokens[-1] = self._qualified_name(tokens[-1])
+        return " ".join(tokens)
+
+    def _qualified_name(self, name: str) -> str:
+        package = self.name_packages.get(name)
+        return f"{package}.{name}" if package else name
 
 
 def _render_type(d: dict, inner_lines: list[str]) -> None:
@@ -64,11 +87,54 @@ def _render_type(d: dict, inner_lines: list[str]) -> None:
     inner_lines.append("}")
 
 
-def build_file_diagram(java_path: Path, known_types: set[str]) -> FileDiagram | None:
+def _parse_imports(src: str) -> dict[str, str]:
+    """Simple name -> package for each single-type import (wildcard and
+    static imports name no single type, so they're skipped)."""
+    return {m.group(2): m.group(1) for m in IMPORT_RE.finditer(src)}
+
+
+def _resolve_package(
+    name: str,
+    own_package: str | None,
+    own_names: set[str],
+    imports: dict[str, str],
+    type_packages: dict[str, set[str | None]],
+) -> str | None:
+    """Package a referenced type lives in, or None when it can't be
+    determined (unknown type, or a simple name declared in several packages
+    with nothing to disambiguate) — such types are drawn outside any package
+    rather than guessed into one."""
+    if name in own_names:
+        return own_package
+    if name in imports:
+        return imports[name]
+    candidates = type_packages.get(name, set())
+    if own_package in candidates:
+        return own_package
+    if len(candidates) == 1:
+        return next(iter(candidates))
+    return None
+
+
+def _rel_names(rel_lines: list[str]) -> set[str]:
+    names: set[str] = set()
+    for line in rel_lines:
+        tokens = line.split(" ")
+        names.add(tokens[0])
+        names.add(tokens[-1])
+    return names
+
+
+def build_file_diagram(
+    java_path: Path,
+    type_packages: dict[str, set[str | None]],
+) -> FileDiagram | None:
+    """type_packages maps every project type's simple name to the package(s)
+    declaring it."""
     raw = java_path.read_text(encoding="utf-8", errors="replace")
     src = strip_strings(strip_comments(raw))
 
-    pkg_m = re.search(r"\bpackage\s+([\w.]+)\s*;", src)
+    pkg_m = PACKAGE_RE.search(src)
     package = pkg_m.group(1) if pkg_m else None
 
     decls = find_type_decls(src)
@@ -97,7 +163,13 @@ def build_file_diagram(java_path: Path, known_types: set[str]) -> FileDiagram | 
             targets.add(t)
         inherit_by_left[left] = targets
 
-    compose_rels, other_rels = build_uses_rels(decls, known_types, inherit_by_left)
+    compose_rels, other_rels = build_uses_rels(decls, set(type_packages), inherit_by_left)
+
+    imports = _parse_imports(src)
+    name_packages = {
+        name: _resolve_package(name, package, decl_names, imports, type_packages)
+        for name in _rel_names(rels + compose_rels + other_rels)
+    }
 
     return FileDiagram(
         stem=java_path.stem,
@@ -107,4 +179,5 @@ def build_file_diagram(java_path: Path, known_types: set[str]) -> FileDiagram | 
         rels=rels,
         compose_rels=compose_rels,
         other_rels=other_rels,
+        name_packages=name_packages,
     )

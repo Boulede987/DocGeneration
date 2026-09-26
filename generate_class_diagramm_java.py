@@ -20,7 +20,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from java_diagram.file_diagram import FileDiagram, build_file_diagram
+from java_diagram.file_diagram import PACKAGE_RE, FileDiagram, build_file_diagram
 from java_diagram.packages import generate_package_diagrams
 from java_diagram.render import assemble, write_file
 from java_diagram.source_parsing import find_type_decls, strip_comments, strip_strings
@@ -33,16 +33,20 @@ def _write_file_outputs(
     full_out_path: Path,
     full_frag_path: Path,
 ) -> None:
-    base_all, base_body = assemble(fd.stem, fd.package, fd.inner_lines, fd.rels, [])
+    rels = fd.qualify_rels(fd.rels)
+    compose_rels = fd.qualify_rels(fd.compose_rels)
+    other_rels = fd.qualify_rels(fd.other_rels)
+
+    base_all, base_body = assemble(fd.stem, fd.package, fd.inner_lines, rels, [])
     write_file(out_path, base_all)
     write_file(frag_path, base_body)
 
-    if fd.compose_rels:
-        base_all, base_body = assemble(fd.stem, fd.package, fd.inner_lines, fd.rels, fd.compose_rels)
+    if compose_rels:
+        base_all, base_body = assemble(fd.stem, fd.package, fd.inner_lines, rels, compose_rels)
         write_file(out_path, base_all)
         write_file(frag_path, base_body)
 
-    full_all, full_body = assemble(fd.stem, fd.package, fd.inner_lines, fd.rels, fd.compose_rels + fd.other_rels)
+    full_all, full_body = assemble(fd.stem, fd.package, fd.inner_lines, rels, compose_rels + other_rels)
     write_file(full_out_path, full_all)
     write_file(full_frag_path, full_body)
 
@@ -53,9 +57,9 @@ def generate_puml(
     frag_path: Path,
     full_out_path: Path,
     full_frag_path: Path,
-    known_types: set[str],
+    type_packages: dict[str, set[str | None]],
 ) -> bool:
-    fd = build_file_diagram(java_path, known_types)
+    fd = build_file_diagram(java_path, type_packages)
     if fd is None:
         return False
     _write_file_outputs(fd, out_path, frag_path, full_out_path, full_frag_path)
@@ -73,7 +77,7 @@ def _generate_one(
     java_file: Path,
     rel: Path,
     out_dirs: tuple[Path, Path, Path, Path],
-    known_types: set[str],
+    type_packages: dict[str, set[str | None]],
 ) -> tuple[str, FileDiagram | None]:
     """Build and write all diagram variants for one file. Returns a status
     string and the parsed FileDiagram (None on skip/error), prints the
@@ -85,7 +89,7 @@ def _generate_one(
     full_frag = full_frag_root / rel.with_suffix(".puml")
 
     try:
-        fd = build_file_diagram(java_file, known_types)
+        fd = build_file_diagram(java_file, type_packages)
         if fd is None:
             print(f"  SKIP   {rel}  (no type declarations)")
             return _STATUS_SKIPPED, None
@@ -97,17 +101,21 @@ def _generate_one(
         return _STATUS_ERROR, None
 
 
-def _collect_known_types(java_files: list[Path]) -> set[str]:
-    known_types: set[str] = set()
+def _collect_type_packages(java_files: list[Path]) -> dict[str, set[str | None]]:
+    """Simple name -> package(s) declaring it, for every project type. A
+    name maps to several packages when unrelated packages reuse it."""
+    type_packages: dict[str, set[str | None]] = {}
     for jf in java_files:
         try:
             raw = jf.read_text(encoding="utf-8", errors="replace")
             src = strip_strings(strip_comments(raw))
+            pkg_m = PACKAGE_RE.search(src)
+            package = pkg_m.group(1) if pkg_m else None
             for d in find_type_decls(src):
-                known_types.add(d["name"].split("<")[0])
+                type_packages.setdefault(d["name"].split("<")[0], set()).add(package)
         except Exception:
             pass
-    return known_types
+    return type_packages
 
 
 def _find_java_files(src_roots: list[Path]) -> dict[Path, Path]:
@@ -153,14 +161,14 @@ def main() -> None:
     java_files = sorted(rel_by_file)
     print(f"Found {len(java_files)} .java files under {', '.join(str(r) for r in args.src_dirs)}")
 
-    known_types = _collect_known_types(java_files)
-    print(f"  {len(known_types)} known project types for uses-detection")
+    type_packages = _collect_type_packages(java_files)
+    print(f"  {len(type_packages)} known project types for uses-detection")
 
     out_dirs = (out_root, frag_root, full_out_root, full_frag_root)
     file_diagrams: list[FileDiagram] = []
     results: list[str] = []
     for jf in java_files:
-        status, fd = _generate_one(jf, rel_by_file[jf], out_dirs, known_types)
+        status, fd = _generate_one(jf, rel_by_file[jf], out_dirs, type_packages)
         results.append(status)
         if fd is not None:
             file_diagrams.append(fd)
