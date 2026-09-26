@@ -1,10 +1,12 @@
 """Parse a single Java file into its diagram parts exactly once: package,
 declared type names, rendered class/enum/interface blocks, and relation
-lines. The per-file writer and the package-level aggregator both consume
-this so a file is never parsed twice."""
+lines. The per-file writer and the package views both consume this so a
+file is never parsed twice."""
 
 import re
 from pathlib import Path
+
+from diagram_common.file_diagram import FileDiagram
 
 from .members import has, parse_members, parse_record_components
 from .relations import build_uses_rels
@@ -15,45 +17,6 @@ from .type_format import uml_type
 
 PACKAGE_RE = re.compile(r"\bpackage\s+([\w.]+)\s*;")
 IMPORT_RE = re.compile(r"^\s*import\s+(?!static\b)([\w.]+)\.([A-Z]\w*)\s*;", re.MULTILINE)
-
-
-class FileDiagram:
-    def __init__(
-        self,
-        stem: str,
-        package: str | None,
-        decl_names: set[str],
-        inner_lines: list[str],
-        rels: list[str],
-        compose_rels: list[str],
-        other_rels: list[str],
-        name_packages: dict[str, str | None],
-    ):
-        self.stem = stem
-        self.package = package
-        self.decl_names = decl_names
-        self.inner_lines = inner_lines
-        self.rels = rels
-        self.compose_rels = compose_rels
-        self.other_rels = other_rels
-        self.name_packages = name_packages
-
-    def qualify_rels(self, rel_lines: list[str]) -> list[str]:
-        """Rewrite both ends of each relation line to their fully-qualified
-        name. Relations are emitted outside the file's namespace block, so an
-        unqualified name lands at top level instead of being silently created
-        inside this file's package."""
-        return [self._qualify_rel(line) for line in rel_lines]
-
-    def _qualify_rel(self, rel_line: str) -> str:
-        tokens = rel_line.split(" ")
-        tokens[0] = self._qualified_name(tokens[0])
-        tokens[-1] = self._qualified_name(tokens[-1])
-        return " ".join(tokens)
-
-    def _qualified_name(self, name: str) -> str:
-        package = self.name_packages.get(name)
-        return f"{package}.{name}" if package else name
 
 
 def _render_type(d: dict, inner_lines: list[str]) -> None:

@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """
-generate_puml.py
-Reads every .cs file under jeu-pac-man/Assets/Scripts/ and writes:
-  Modelisation/ClassDiagram/    — one .puml per file, inherits/implements only
+generate_class_diagramm.py
+Reads every .cs file under <src_dir> and writes:
+  Modelisation/ClassDiagram/    — one .puml per file, inherits/implements + composition
   Modelisation/Fragments/       — fragment versions (no @startuml/@enduml)
   Modelisation/ClassDiagram-Full/ — same + --> (field/prop) and ..> (method-only) to known types
   Modelisation/Fragments-Full/    — fragment versions of the full diagrams
+  Modelisation/Namespaces/      — one diagram per namespace, an _overview.puml
+                                  linking them, and a _project.puml with every class
+  Modelisation/Namespaces-Full/ — same views with every relation
 """
 
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
+
+from diagram_common.file_diagram import FileDiagram, FileOutputPaths, relation_ends, write_file_outputs
+from diagram_common.package_views import generate_package_views
 
 # ── Modifier keywords ─────────────────────────────────────────────────────────
 
@@ -641,34 +649,6 @@ def _class_stereotype(mods: str, base_class: str | None, kind: str) -> str:
     return ""
 
 
-def _assemble(
-    stem: str,
-    namespace: str | None,
-    inner_lines: list[str],
-    rels: list[str],
-    extra_rels: list[str],
-) -> tuple[list[str], list[str]]:
-    """Returns (full_lines, body_lines).
-    body_lines has no @startuml, skinparam, or @enduml — for use as fragment.
-
-    Relation lines go after the namespace block and must use fully-qualified
-    names: inside the block, PlantUML creates every undeclared target in
-    this file's namespace, even when it belongs to another one."""
-    body: list[str] = []
-    if namespace:
-        body.append(f"namespace {namespace} {{")
-    body.extend(inner_lines)
-    if namespace:
-        body.append("}")
-    body.append("")
-    body.extend(rels)
-    if extra_rels:
-        body.extend(extra_rels)
-
-    full = [f"@startuml {stem}", ""] + _SKINPARAM_LINES + [""] + body + ["", "@enduml"]
-    return full, body
-
-
 # ── Namespace resolution ──────────────────────────────────────────────────────
 
 _NAMESPACE_RE = re.compile(r"\bnamespace\s+([\w.]+)")
@@ -735,135 +715,172 @@ def _resolve_namespace(
     return None
 
 
-def _qualify_rels(
+def _resolve_rel_namespaces(
     rel_lines: list[str],
     own_namespace: str | None,
     own_names: set[str],
     src: str,
     type_namespaces: dict[str, set[str | None]],
-) -> list[str]:
-    """Rewrite both ends of each relation line ('Left op ... Right') to their
-    fully-qualified name, so they land in the right namespace when emitted
-    outside this file's namespace block."""
+) -> dict[str, str | None]:
+    """Namespace of every name at either end of a relation line."""
     usings = set(_USING_RE.findall(src))
-
-    def qualified(name: str) -> str:
-        namespace = _resolve_namespace(name, own_namespace, own_names, usings, type_namespaces)
-        return f"{namespace}.{name}" if namespace else name
-
-    result: list[str] = []
-    for line in rel_lines:
-        tokens = line.split(" ")
-        tokens[0] = qualified(tokens[0])
-        tokens[-1] = qualified(tokens[-1])
-        result.append(" ".join(tokens))
-    return result
+    names = {end for line in rel_lines for end in relation_ends(line)}
+    return {
+        name: _resolve_namespace(name, own_namespace, own_names, usings, type_namespaces)
+        for name in names
+    }
 
 
-def generate_puml(
-    cs_path: Path,
-    out_path: Path,
-    frag_path: Path,
-    full_out_path: Path | None = None,
-    full_frag_path: Path | None = None,
-    type_namespaces: dict[str, set[str | None]] | None = None,
-) -> bool:
-    """type_namespaces maps every project type's simple name to the
-    namespace(s) declaring it; without it, only the base diagram is written."""
-    raw = cs_path.read_text(encoding="utf-8", errors="replace")
-    src = _strip_strings(_strip_comments(raw))
+# ── File diagram building ─────────────────────────────────────────────────────
 
-    namespace = _parse_namespace(src)
+StereotypeFn = Callable[[str, str | None, str], str]
+UsesRelsFn = Callable[[list[dict], set[str], dict[str, set[str]]], tuple[list[str], list[str]]]
 
-    decls = _find_type_decls(src)
-    if not decls:
-        return False
 
+@dataclass(frozen=True)
+class GeneratorRules:
+    """What differs between the plain C# and the Unity generator.
+    hidden_bases: base classes never drawn as an inheritance arrow."""
+    class_stereotype: StereotypeFn
+    build_uses_rels: UsesRelsFn
+    hidden_bases: frozenset[str] = frozenset()
+
+
+CSHARP_RULES = GeneratorRules(_class_stereotype, _build_uses_rels)
+
+
+def _render_class(d: dict, stereotype: str) -> list[str]:
+    stereo_str = f" {stereotype}" if stereotype else ""
+    prefix = "abstract " if _has(d["mods"], "abstract") else ""
+    fields, props, methods = _parse_members(d["body"], d["name"])
+    members = [f"  {member}" for member in fields + props + methods]
+    return [f"{prefix}class {d['name']}{stereo_str} {{"] + members + ["}"]
+
+
+def _render_decls(decls: list[dict], class_stereotype: StereotypeFn) -> list[str]:
     inner_lines: list[str] = []
+    for d in decls:
+        if d["kind"] == "enum":
+            _gen_enum(d["name"], d["body"], inner_lines)
+        elif d["kind"] == "interface":
+            _gen_interface(d["name"], d["body"], inner_lines)
+        else:
+            base_class, _ = _split_bases(d["bases"])
+            inner_lines.extend(_render_class(d, class_stereotype(d["mods"], base_class, d["kind"])))
+    return inner_lines
+
+
+def _inheritance_rels(
+    decls: list[dict],
+    hidden_bases: frozenset[str],
+) -> tuple[list[str], dict[str, set[str]]]:
+    """Returns (relation lines, inherited/implemented names per declared type).
+    A hidden base draws no arrow but still counts as inherited, so it is
+    never reported again as a usage."""
     rels: list[str] = []
     inherit_by_left: dict[str, set[str]] = {}
-
     for d in decls:
-        kind = d["kind"]
-        name = d["name"]
-        mods = d["mods"]
-        body = d["body"]
         base_class, ifaces = _split_bases(d["bases"])
-
-        if kind == "enum":
-            _gen_enum(name, body, inner_lines)
-        elif kind == "interface":
-            _gen_interface(name, body, inner_lines)
-        else:
-            stereo = _class_stereotype(mods, base_class, kind)
-            stereo_str = f" {stereo}" if stereo else ""
-            prefix = "abstract " if _has(mods, "abstract") else ""
-            inner_lines.append(f"{prefix}class {name}{stereo_str} {{")
-            fields, props, methods = _parse_members(body, name)
-            for f in fields:
-                inner_lines.append(f"  {f}")
-            for p in props:
-                inner_lines.append(f"  {p}")
-            for m in methods:
-                inner_lines.append(f"  {m}")
-            inner_lines.append("}")
-
         # Left side: strip type params — PlantUML registers 'class Foo<T>' as 'Foo'
         # Quoting 'Foo<T>' creates a separate entity instead of referencing the declaration
-        left = name.split("<")[0]
+        left = d["name"].split("<")[0]
         targets: set[str] = set()
         if base_class:
             t = _puml_name(base_class)
-            rels.append(f"{left} --|> {t}")
+            if t not in hidden_bases:
+                rels.append(f"{left} --|> {t}")
             targets.add(t)
         for iface in ifaces:
             t = _puml_name(iface)
             rels.append(f"{left} ..|> {t}")
             targets.add(t)
         inherit_by_left[left] = targets
+    return rels, inherit_by_left
 
-    own_names = set(inherit_by_left)
 
-    def qualify(rel_lines: list[str]) -> list[str]:
-        return _qualify_rels(rel_lines, namespace, own_names, src, type_namespaces or {})
+def build_file_diagram(
+    cs_path: Path,
+    type_namespaces: dict[str, set[str | None]],
+    rules: GeneratorRules = CSHARP_RULES,
+) -> FileDiagram | None:
+    """type_namespaces maps every project type's simple name to the
+    namespace(s) declaring it. Returns None when the file declares no type."""
+    raw = cs_path.read_text(encoding="utf-8", errors="replace")
+    src = _strip_strings(_strip_comments(raw))
+    decls = _find_type_decls(src)
+    if not decls:
+        return None
 
-    rels = qualify(rels)
-
-    # Base output (inherits/implements only)
-    base_all, base_body = _assemble(cs_path.stem, namespace, inner_lines, rels, [])
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(base_all), encoding="utf-8")
-    frag_path.parent.mkdir(parents=True, exist_ok=True)
-    frag_path.write_text("\n".join(base_body), encoding="utf-8")
-
-    # Full output (adds *-->, o-->, -->, ..> for project types used in members)
-    if type_namespaces is not None and full_out_path is not None and full_frag_path is not None:
-        compose_rels, other_rels = _build_uses_rels(decls, set(type_namespaces), inherit_by_left)
-        compose_rels = qualify(compose_rels)
-        other_rels = qualify(other_rels)
-
-        # Base diagram also gets composition (*-->) — strong structural relation
-        if compose_rels:
-            base_all, base_body = _assemble(cs_path.stem, namespace, inner_lines, rels, compose_rels)
-            out_path.write_text("\n".join(base_all), encoding="utf-8")
-            frag_path.write_text("\n".join(base_body), encoding="utf-8")
-
-        full_all, full_body = _assemble(cs_path.stem, namespace, inner_lines, rels, compose_rels + other_rels)
-
-        full_out_path.parent.mkdir(parents=True, exist_ok=True)
-        full_out_path.write_text("\n".join(full_all), encoding="utf-8")
-        full_frag_path.parent.mkdir(parents=True, exist_ok=True)
-        full_frag_path.write_text("\n".join(full_body), encoding="utf-8")
-
-    return True
+    namespace = _parse_namespace(src)
+    rels, inherit_by_left = _inheritance_rels(decls, rules.hidden_bases)
+    compose_rels, other_rels = rules.build_uses_rels(decls, set(type_namespaces), inherit_by_left)
+    decl_names = set(inherit_by_left)
+    name_namespaces = _resolve_rel_namespaces(
+        rels + compose_rels + other_rels, namespace, decl_names, src, type_namespaces,
+    )
+    return FileDiagram(
+        stem=cs_path.stem,
+        package=namespace,
+        decl_names=decl_names,
+        inner_lines=_render_decls(decls, rules.class_stereotype),
+        rels=rels,
+        compose_rels=compose_rels,
+        other_rels=other_rels,
+        name_packages=name_namespaces,
+    )
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+NAMESPACE_VIEWS_DIR = "Namespaces"
+
+
+def _generate_one(
+    cs_path: Path,
+    rel: Path,
+    out_base: Path,
+    type_namespaces: dict[str, set[str | None]],
+    rules: GeneratorRules,
+    skinparam_lines: list[str],
+) -> FileDiagram | None:
+    """Build and write all diagram variants for one file; prints its result
+    line. Returns None when skipped or failed."""
+    try:
+        fd = build_file_diagram(cs_path, type_namespaces, rules)
+        if fd is None:
+            print(f"  SKIP   {rel}  (no type declarations)")
+            return None
+        write_file_outputs(fd, FileOutputPaths.under(out_base, rel), skinparam_lines)
+    except Exception as exc:
+        print(f"  ERROR  {rel}  — {exc}")
+        return None
+    print(f"  OK     {rel}")
+    return fd
+
+
+def generate_all(
+    src_root: Path,
+    cs_files: list[Path],
+    out_base: Path,
+    type_namespaces: dict[str, set[str | None]],
+    rules: GeneratorRules,
+    skinparam_lines: list[str],
+) -> None:
+    """Write every per-file diagram, then the namespace views built from them."""
+    file_diagrams: list[FileDiagram] = []
+    for cs in cs_files:
+        fd = _generate_one(cs, cs.relative_to(src_root), out_base, type_namespaces, rules, skinparam_lines)
+        if fd is not None:
+            file_diagrams.append(fd)
+    print(f"\nDone: {len(file_diagrams)} generated, {len(cs_files) - len(file_diagrams)} skipped or failed.")
+
+    namespace_count = generate_package_views(file_diagrams, out_base, NAMESPACE_VIEWS_DIR, skinparam_lines)
+    print(f"Wrote {namespace_count} namespace diagrams + overview + project views to {out_base / NAMESPACE_VIEWS_DIR}(-Full)")
+
+
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: generate_puml.py <src_dir> [out_dir]")
+        print("Usage: generate_class_diagramm.py <src_dir> [out_dir]")
         print("  src_dir  — directory to search recursively for .cs files")
         print("  out_dir  — output root (default: <src_dir>/Modelisation)")
         sys.exit(1)
@@ -871,37 +888,13 @@ def main() -> None:
     src_root = Path(sys.argv[1])
     out_base = Path(sys.argv[2]) if len(sys.argv) > 2 else src_root / "Modelisation"
 
-    out_root       = out_base / "ClassDiagram"
-    frag_root      = out_base / "Fragments"
-    full_out_root  = out_base / "ClassDiagram-Full"
-    full_frag_root = out_base / "Fragments-Full"
-
     cs_files = sorted(src_root.rglob("*.cs"))
     print(f"Found {len(cs_files)} .cs files under {src_root}")
 
-    # First pass: collect all declared type names and their namespaces
     type_namespaces = _collect_type_namespaces(cs_files)
     print(f"  {len(type_namespaces)} known project types for uses-detection")
 
-    ok = skipped = errors = 0
-    for cs in cs_files:
-        rel       = cs.relative_to(src_root)
-        out       = out_root       / rel.with_suffix(".puml")
-        frag      = frag_root      / rel.with_suffix(".puml")
-        full_out  = full_out_root  / rel.with_suffix(".puml")
-        full_frag = full_frag_root / rel.with_suffix(".puml")
-        try:
-            if generate_puml(cs, out, frag, full_out, full_frag, type_namespaces):
-                print(f"  OK     {rel}")
-                ok += 1
-            else:
-                print(f"  SKIP   {rel}  (no type declarations)")
-                skipped += 1
-        except Exception as exc:
-            print(f"  ERROR  {rel}  — {exc}")
-            errors += 1
-
-    print(f"\nDone: {ok} generated, {skipped} skipped, {errors} errors.")
+    generate_all(src_root, cs_files, out_base, type_namespaces, CSHARP_RULES, _SKINPARAM_LINES)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,7 @@
 """Render parsed Java type declarations as PlantUML text: enum/interface
-bodies, class stereotypes, the skinparam theme, and final @startuml assembly."""
+bodies, class stereotypes, and the skinparam theme."""
 
 import re
-from pathlib import Path
 
 from .depth_utils import split_top_level
 from .members import ANNOT_PREFIX, flatten, has, simplify_params
@@ -91,36 +90,3 @@ def class_stereotype(mods: str, kind: str) -> str:
     if has(mods, "static"):
         return "<<static>>"
     return ""
-
-
-def assemble(
-    stem: str,
-    package: str | None,
-    inner_lines: list[str],
-    rels: list[str],
-    extra_rels: list[str],
-) -> tuple[list[str], list[str]]:
-    """Returns (full_lines, body_lines).
-    body_lines has no @startuml, skinparam, or @enduml — for use as fragment.
-
-    Relation lines go after the namespace block and must use fully-qualified
-    names: inside the block, PlantUML creates every undeclared target in
-    this file's package, even when it belongs to another one."""
-    body: list[str] = []
-    if package:
-        body.append(f"namespace {package} {{")
-    body.extend(inner_lines)
-    if package:
-        body.append("}")
-    body.append("")
-    body.extend(rels)
-    if extra_rels:
-        body.extend(extra_rels)
-
-    full = [f"@startuml {stem}", ""] + SKINPARAM_LINES + [""] + body + ["", "@enduml"]
-    return full, body
-
-
-def write_file(path: Path, lines: list[str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines), encoding="utf-8")
