@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 # ── Import stable parsing utilities from generic script ───────────────────────
-from generate_puml import (
+from generate_class_diagramm import (
     _strip_comments, _strip_strings,
     _find_type_decls, _flatten, _split_bases,
     _ATTR_PREFIX, _PROP_RE, _METHOD_RE, _FIELD_RE,
@@ -28,7 +28,7 @@ from generate_puml import (
     _iter_method_bodies, _scan_body_types, _collect_newed_types,
     _gen_enum, _gen_interface,
 )
-import generate_puml as _gp
+import generate_class_diagramm as _gp
 
 
 # ── Unity-specific constants ──────────────────────────────────────────────────
