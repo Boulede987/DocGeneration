@@ -1,0 +1,45 @@
+# Decisions
+
+## 2026-10-10 — Package views group by package, not by inferred "module"
+
+**Context:** The general views (`Packages/`, `Namespaces/`) need a grouping
+unit above the file.
+
+**Decision:** Group by the declared package / namespace
+(`docgen/core/package_views.py`): one diagram per package, an overview
+linking packages by cross-package usage, and a whole-project diagram.
+
+**Alternatives considered:**
+- Inferring logical modules (several packages forming one feature) —
+  rejected: nothing in the source says which packages belong together, so
+  any grouping would be a guess presented as fact.
+
+## 2026-10-10 — Shared language architecture: implementation choices beyond the design
+
+**Context:** Refactor into `docgen/` (core + per-language modules), see
+`docs/Modelisation/refactor_design.puml`. These choices came up while
+implementing and are not visible in the class diagram.
+
+**Decision:**
+- Each source file is parsed once: the pipeline parses every file, then
+  builds the type index and the diagrams from those parses (the old scripts
+  read every file twice).
+- The entry scripts exit with code 1 when any file fails to parse or write
+  (they used to exit 0). Failed files are still listed and the rest is
+  still generated.
+- Legacy `SCRIPT SRC_DIR OUT_DIR` form (C# and Unity scripts only): with
+  exactly two paths and no `-o`, the second path is the output folder when
+  it contains no source file of the language. Java never had this form, so
+  it doesn't get it — guessing could write output into a source folder.
+- Skinparam blocks are built by `docgen/core/style.py` from per-language
+  stereotype colors instead of three copied lists.
+- Parsing regexes were ported verbatim, quirks included, so output stays
+  byte-identical (verified: test fixtures, mineutze-worldgen 302 files,
+  ml-agents 16 024 files for both C# generators).
+
+**Alternatives considered:**
+- Merging the Java and C# member regexes into one parameterized parser —
+  rejected for this increment: their small divergences (properties, varargs,
+  interface quirks) would change output; a later increment can do it with
+  the golden tests as a net.
+- Detecting the legacy form for every language — rejected (see above).

@@ -1,0 +1,96 @@
+# Adding a language
+
+A language is a parser that turns one source file into the neutral model in
+`docgen/core/model.py`. Everything after parsing is shared and needs no
+change: rendering, relation classification, name resolution, per-file
+diagrams, package views, and the command line.
+
+## Checklist
+
+1. **Create `docgen/languages/<lang>/`** with a `language.py` defining a
+   subclass of `docgen.core.language.Language`:
+
+   | Class attribute | Example (Java) |
+   |---|---|
+   | `name` | `"java"` — the registry key |
+   | `source_suffix` | `".java"` |
+   | `views_dir` | `"Packages"` — folder for package-level views |
+   | `skinparam_lines` | `skinparam_lines([StereotypeStyle("record", ...)])` from `docgen.core.style` |
+   | `vocabulary` | `TypeVocabulary(primitives=..., collection_wrappers=...)` |
+   | `hidden_bases` (optional) | base classes never drawn, e.g. Unity's `MonoBehaviour` |
+
+   and implementing `parse_file(stem, source) -> ParsedFile`.
+
+2. **Export it** from `docgen/languages/<lang>/__init__.py`.
+
+3. **Register it**: add one instance to the tuple in
+   `docgen/languages/__init__.py` (`REGISTRY`).
+
+4. **Add an entry script** at the repo root, `generate_class_diagramm_<lang>.py`:
+
+   ```python
+   import sys
+
+   from docgen.core.cli import main
+   from docgen.languages import REGISTRY
+
+   sys.exit(main(REGISTRY["<lang>"]))
+   ```
+
+5. **Add tests**: a fixture project under `tests/fixtures/<lang>/`, its
+   reviewed output under `tests/golden/<lang>/`, and a golden test in
+   `tests/test_golden_output.py`.
+
+No file under `docgen/core/` changes.
+
+## What `parse_file` must produce
+
+A `ParsedFile` with:
+
+- `package` — the file's grouping unit (package, namespace, module path), or
+  `None`. It becomes the PlantUML namespace, so its segments must be
+  separated by `.`.
+- `decls` — one `TypeDecl` per declared type (empty when the file declares
+  none; the file is then skipped). Per kind:
+  - all kinds: `name` (may include type parameters, e.g. `Box<T>`), `kind`,
+    `modifiers` (words like `abstract`, `static`), `base_class`,
+    `interfaces` — type texts as written.
+  - `ENUM`: `enum_values`.
+  - `INTERFACE`: `members`.
+  - class-like kinds (`CLASS`, `RECORD`, `STRUCT`): `members` in display
+    order, plus the usage lists relations are computed from:
+    `field_usages` (types held by fields/properties), `signature_types`
+    (method return and parameter types), `body_types` (types used inside
+    method bodies), `newed_types` (types instantiated).
+- `hints` — where the file's names come from:
+  `type_imports` for imports naming one type (`import a.b.Foo` →
+  `{"Foo": "a.b"}`), `namespace_imports` for whole-package imports
+  (C# `using a.b;`).
+
+`Member.type` is display text: format collection types with
+`vocabulary.uml_type()` where the language wants `Foo[*]` instead of
+`List<Foo>`; use `None` for a method shown without a return type.
+
+## Optional hooks
+
+Override on your `Language` subclass when the defaults don't fit:
+
+- `enclosing_packages(package)` — packages visible without an import,
+  closest first. Default: the file's own package only. C# returns every
+  parent namespace and the global one.
+- `class_stereotype(decl)` — default: `<<record>>` / `<<struct>>` by kind,
+  then `<<abstract>>`, then `<<static>>`.
+- `relation_policy(parsed_files)` — how a held type becomes a relation.
+  Default: composition (`*-->`) when instantiated or public, association
+  (`-->`) otherwise. Return a `RelationPolicy` subclass to change it; it
+  receives every parsed file, so it can depend on the whole project (Unity
+  finds ScriptableObject subclasses this way).
+
+## Helpers for brace languages
+
+`docgen/clike/` holds scanning helpers shared by Java and C#: comment
+stripping, brace matching, depth-aware splitting, flattening a type body
+into member statements, and scanning method bodies for used types. Use them
+for any C-like language; a language with other syntax doesn't need them.
+
+`tests/toy_language.py` is a complete minimal language in about 50 lines.
