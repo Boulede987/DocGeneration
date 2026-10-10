@@ -1,0 +1,6 @@
+class App {
+  + {static} main(String[])
+}
+
+App ..> com.shop.util.InMemoryRepository
+App ..> com.shop.service.OrderService

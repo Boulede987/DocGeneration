@@ -1,0 +1,8 @@
+namespace com.shop.model {
+interface Priced <<interface>> {
+  + {static} MAX_DISCOUNT_PERCENT : int
+  + price() : Money
+  + isFree() : boolean
+  + of(Money) : Priced
+}
+}

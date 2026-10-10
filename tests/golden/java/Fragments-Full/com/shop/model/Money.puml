@@ -1,0 +1,14 @@
+namespace com.shop.model {
+class Money <<record>> {
+  + cents : long
+  + currency : Currency
+  + {static} ZERO : Money
+  + plus(Money) : Money
+}
+enum Currency <<enum>> {
+  EUR
+  USD
+}
+}
+
+com.shop.model.Money *--> com.shop.model.Currency

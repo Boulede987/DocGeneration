@@ -1,0 +1,25 @@
+namespace com.shop.service {
+class OrderService {
+  - products : Repository<Product>
+  + ordersById : Map<String, Order>
+  - gateway : PaymentGateway
+  + place(Product, int) : Order
+  + close()
+}
+class Order <<record>> {
+  + product : Product
+  + quantity : int
+  + total : Money
+  + id() : String
+}
+}
+
+com.shop.service.OrderService --|> BaseService
+com.shop.service.OrderService ..|> AutoCloseable
+com.shop.service.Order *--> com.shop.model.Money
+com.shop.service.Order *--> com.shop.model.Product
+com.shop.service.OrderService --> org.vendor.pay.PaymentGateway
+com.shop.service.OrderService --> com.shop.model.Product
+com.shop.service.OrderService --> com.shop.util.Repository
+com.shop.service.OrderService ..> com.shop.model.Money
+com.shop.service.OrderService ..> com.shop.service.Order

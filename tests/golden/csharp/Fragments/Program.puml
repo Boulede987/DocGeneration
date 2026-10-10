@@ -1,0 +1,6 @@
+class Program {
+  - {static} manager : GameManager
+  + {static} Main(string[])
+}
+
+Program *--> Game.Core.GameManager

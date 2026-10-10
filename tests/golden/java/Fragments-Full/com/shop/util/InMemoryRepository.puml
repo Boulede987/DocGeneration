@@ -1,0 +1,16 @@
+namespace com.shop.util {
+class InMemoryRepository<T> {
+  - items : T[*]
+  - {static} instances : int
+  + find(long) : Optional<T>
+  + all() : List<T>
+  + save(T)
+}
+class Counter <<static>> {
+  - {static} count : int
+  ~ {static} increment()
+}
+}
+
+com.shop.util.InMemoryRepository ..|> com.shop.util.Repository
+com.shop.util.InMemoryRepository ..> com.shop.util.Counter

@@ -1,0 +1,7 @@
+namespace com.shop.util {
+interface Repository<T> <<interface>> {
+  + find(long) : Optional<T>
+  + all() : List<T>
+  + save(T) : void
+}
+}

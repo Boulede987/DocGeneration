@@ -1,0 +1,18 @@
+namespace Game.Core {
+class GameManager {
+  - player : Player
+  - enemies : Pool<Enemy>
+  + Log : Logger
+  + Tick(Item)
+  + Dispose()
+}
+class Logger <<static>> {
+  + {static} Log(string)
+}
+}
+
+Game.Core.GameManager ..|> IDisposable
+Game.Core.GameManager *--> Game.Core.Logger
+Game.Core.GameManager --> Game.Model.Player
+Game.Core.GameManager ..> Game.Model.Item
+Game.Core.GameManager ..> Game.Model.Stats

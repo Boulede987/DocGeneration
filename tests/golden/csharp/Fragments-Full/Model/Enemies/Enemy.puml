@@ -1,0 +1,15 @@
+namespace Game.Model.Enemies {
+class Enemy {
+  - loot : Item
+  - faction : Faction
+  + Drops : Item[*]
+  + Act()
+}
+class Logger {
+  + {static} Log(string)
+}
+}
+
+Game.Model.Enemies.Enemy --|> Game.Model.Actor
+Game.Model.Enemies.Enemy *--> "0..*" Game.Model.Item
+Game.Model.Enemies.Enemy --> Game.Model.Faction

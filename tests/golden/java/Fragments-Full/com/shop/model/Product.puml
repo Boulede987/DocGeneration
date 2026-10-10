@@ -1,0 +1,17 @@
+namespace com.shop.model {
+class Product {
+  + {static} DEFAULT_NAME : String
+  - name : String
+  - price : Money
+  # tags : Tag[*]
+  + price() : Money
+  + retag(Tag[])
+  + compareTo(Product) : int
+}
+}
+
+com.shop.model.Product --|> com.shop.model.Entity
+com.shop.model.Product ..|> Comparable
+com.shop.model.Product ..|> com.shop.model.Priced
+com.shop.model.Product --> com.shop.model.Money
+com.shop.model.Product --> "0..*" com.shop.model.Tag

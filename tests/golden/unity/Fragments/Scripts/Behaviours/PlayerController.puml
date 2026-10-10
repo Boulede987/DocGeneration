@@ -1,0 +1,31 @@
+namespace Arena.Behaviours {
+class PlayerController {
+  - startingWeapon : WeaponData
+  - inventory : Inventory
+  - moveSpeed : float
+  - health : Health
+  - pickedUp : ItemData[*]
+  + hud : HUD
+  - Awake()
+  + TakeDamage(int)
+  - Flash() : IEnumerator<WaitForSeconds>
+}
+interface IDamageable <<interface>> {
+  + TakeDamage(int) : void
+}
+class Health {
+  - current : int
+  + Remove(int)
+}
+class Inventory {
+  - items : ItemData[*]
+}
+class HUD {
+  - player : PlayerController
+}
+}
+
+Arena.Behaviours.PlayerController ..|> Arena.Behaviours.IDamageable
+Arena.Behaviours.PlayerController *--> Arena.Behaviours.HUD
+Arena.Behaviours.PlayerController *--> Arena.Behaviours.Health
+Arena.Behaviours.PlayerController *--> Arena.Behaviours.Inventory

@@ -1,0 +1,6 @@
+namespace com.shop.model {
+enum Tag <<enum>> {
+  NEW
+  LIMITED
+}
+}

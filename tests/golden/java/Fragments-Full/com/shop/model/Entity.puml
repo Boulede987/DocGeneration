@@ -1,0 +1,7 @@
+namespace com.shop.model {
+abstract class Entity <<abstract>> {
+  - id : long
+  # {abstract} validate()
+  + id() : long
+}
+}

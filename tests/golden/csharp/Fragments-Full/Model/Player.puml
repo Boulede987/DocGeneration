@@ -1,0 +1,20 @@
+namespace Game.Model {
+class Player {
+  + {static} MaxLives : int
+  - inventory : Item[*]
+  # stats : Stats
+  + Name : string
+  + Score : int
+  + Pick(Item)
+  + ComputeScore(Dictionary<string, int>) : int
+}
+class Stats <<struct>> {
+  + Strength : int
+  + Speed : float
+}
+}
+
+Game.Model.Player --|> Game.Model.Actor
+Game.Model.Player ..|> Game.Model.IScorable
+Game.Model.Player --> Game.Model.Stats
+Game.Model.Player ..> Game.Model.Item

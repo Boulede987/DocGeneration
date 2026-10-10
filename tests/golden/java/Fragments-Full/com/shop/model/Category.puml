@@ -1,0 +1,12 @@
+namespace com.shop.model {
+class Category {
+  - products : Product[*]
+  - parent : Category
+  + path() : Path
+}
+class Path <<static>> {
+  - segments : String[*]
+}
+}
+
+com.shop.model.Category ..> com.shop.model.Path

@@ -1,0 +1,59 @@
+@startuml Data
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<struct>> #FAD7A0
+  BorderColor<<struct>> #D68910
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<scriptableObject>> #d6a0fa
+  BorderColor<<scriptableObject>> #d61094
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace Arena.Data {
+class ItemData <<scriptableObject>> {
+  + displayName : string
+  - icon : Sprite
+  + price : int
+}
+class WeaponData {
+  + damage : float
+  + projectile : ProjectileSettings
+}
+class ProjectileSettings {
+  + speed : float
+  + offset : Vector3
+}
+}
+
+Arena.Data.WeaponData --|> Arena.Data.ItemData
+Arena.Data.WeaponData *--> Arena.Data.ProjectileSettings
+
+@enduml

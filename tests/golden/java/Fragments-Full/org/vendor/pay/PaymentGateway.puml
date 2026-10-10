@@ -1,0 +1,5 @@
+namespace org.vendor.pay {
+interface PaymentGateway <<interface>> {
+  + charge(long) : boolean
+}
+}

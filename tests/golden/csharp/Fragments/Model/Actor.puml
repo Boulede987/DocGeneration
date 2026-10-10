@@ -1,0 +1,18 @@
+namespace Game.Model {
+abstract class Actor <<abstract>> {
+  # health : int
+  + {abstract} Act()
+  + IsAlive() : bool
+}
+interface IScorable <<interface>> {
+  + ComputeScore(System.Collections.Generic.Dictionary<string, int>) : int
+}
+enum Faction <<enum>> {
+  Neutral
+  Ally
+  Enemy
+}
+class Item {
+  + Id : string
+}
+}
