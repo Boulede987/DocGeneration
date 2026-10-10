@@ -1,0 +1,255 @@
+@startuml refactor_design
+' As-built architecture of the class diagram generators (2026-10-10).
+' Written by hand from the code: DocGeneration has no Python generator.
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "entry scripts" {
+  class generate_class_diagramm_java <<script>> {
+    main(REGISTRY["java"])
+  }
+  class generate_class_diagramm <<script>> {
+    main(REGISTRY["csharp"], legacy_out_positional=True)
+  }
+  class generate_class_diagramm_unity <<script>> {
+    main(REGISTRY["unity"], legacy_out_positional=True)
+  }
+}
+
+package "docgen.core" {
+  class cli <<module>> {
+    + main(language, argv, legacy_out_positional) : int
+    + parse_command_line(...) : CommandLine
+  }
+  class CommandLine <<dataclass>> {
+    src_dirs : list[Path]
+    output_base : Path
+  }
+  class pipeline <<module>> {
+    + run(language, src_roots, output_base) : RunSummary
+    + discover_sources(roots, suffix) : list[SourceFile]
+    + build_file_diagram(parsed, index, language, policy) : FileDiagram
+  }
+  class RunSummary <<dataclass>> {
+    generated : int
+    skipped : list[Path]
+    errors : dict[Path, str]
+    package_count : int
+  }
+  abstract class Language {
+    + name : str
+    + source_suffix : str
+    + views_dir : str
+    + skinparam_lines : list[str]
+    + vocabulary : TypeVocabulary
+    + hidden_bases : frozenset[str]
+    + {abstract} parse_file(stem, source) : ParsedFile
+    + enclosing_packages(package) : list[str|None]
+    + class_stereotype(declaration) : str|None
+    + relation_policy(parsed_files) : RelationPolicy
+  }
+  class TypeVocabulary <<dataclass>> {
+    primitives : frozenset[str]
+    collection_wrappers : frozenset[str]
+    + is_collection(type_text) : bool
+    + uml_type(type_text) : str
+    + type_names(type_text) : set[str]
+  }
+  class ParsedFile <<dataclass>> {
+    stem : str
+    package : str | None
+    declarations : list[TypeDecl]
+    hints : ResolutionHints
+  }
+  class ResolutionHints <<dataclass>> {
+    type_imports : dict[str, str]
+    namespace_imports : set[str]
+  }
+  class TypeDecl <<dataclass>> {
+    name : str
+    kind : TypeKind
+    modifiers : frozenset[str]
+    base_class : str | None
+    interfaces : list[str]
+    members : list[Member]
+    enum_values : list[str]
+    field_usages : list[FieldUsage]
+    signature_types : list[str]
+    body_types : list[str]
+    newed_types : list[str]
+  }
+  class Member <<dataclass>> {
+    kind : MemberKind
+    name : str
+    visibility : Visibility
+    is_static : bool
+    is_abstract : bool
+    type : str | None
+    params : list[str]
+  }
+  class FieldUsage <<dataclass>> {
+    type_text : str
+    is_public : bool
+    is_serialized : bool
+  }
+  enum TypeKind {
+    CLASS
+    INTERFACE
+    ENUM
+    RECORD
+    STRUCT
+  }
+  enum Visibility {
+    PUBLIC
+    PRIVATE
+    PROTECTED
+    PACKAGE
+  }
+  enum MemberKind {
+    FIELD
+    PROPERTY
+    METHOD
+  }
+  class relations <<module>> {
+    + inheritance_relations(declaration, hidden_bases) : list[Relation]
+    + usage_relations(declaration, known, inherited, policy, vocabulary) : list[Relation]
+  }
+  class Relation <<dataclass>> {
+    source : str
+    arrow : str
+    target : str
+    level : RelationLevel
+    multiplicity : str | None
+  }
+  enum RelationLevel {
+    INHERITANCE
+    STRONG
+    WEAK
+  }
+  class RelationPolicy {
+    + classify_field(facts) : (arrow, RelationLevel)
+  }
+  class FieldFacts <<dataclass>> {
+    target : str
+    is_collection : bool
+    is_public : bool
+    is_serialized : bool
+    is_newed : bool
+  }
+  class ProjectIndex {
+    + known_types() : set[str]
+    + packages_of(name) : set[str|None]
+  }
+  class resolution <<module>> {
+    + resolve_package(name, parsed, index, enclosing_packages) : str|None
+  }
+  class render <<module>> {
+    + render_declaration(declaration, stereotype) : list[str]
+  }
+  class style <<module>> {
+    + skinparam_lines(kind_styles, extra_styles) : list[str]
+  }
+  class StereotypeStyle <<dataclass>> {
+    stereotype : str | None
+    background : str
+    border : str
+  }
+  class FileDiagram <<dataclass>> {
+    stem : str
+    package : str | None
+    inner_lines : list[str]
+    relations : list[Relation]
+    name_packages : dict[str, str|None]
+    + base_relations() / full_relations()
+    + render_relations(relations) : list[str]
+  }
+  class package_views <<module>> {
+    + generate_package_views(file_diagrams, output_base, views_dir, skinparam) : int
+  }
+  class puml <<module>> {
+    + namespace_block / wrap_document / write_file
+  }
+}
+
+package "docgen.clike" {
+  class text_scan <<module>> {
+    + strip_c_comments / close_brace
+    + split_top_level / split_by_comma
+    + flatten(body, nested_type, property_inner)
+  }
+  class body_scan <<module>> {
+    + iter_method_bodies(...)
+    + scan_body_types(method_body)
+    + instantiated_type_texts(...)
+  }
+  class modifiers <<module>> {
+    + visibility_from(modifiers, rules) : Visibility
+    + has_modifier(modifiers, *keywords) : bool
+  }
+}
+
+package "docgen.languages" {
+  class REGISTRY <<dict>> {
+    "java" / "csharp" / "unity"
+  }
+  class JavaLanguage {
+    declarations.py / members.py / vocabulary.py
+  }
+  class CSharpLanguage {
+    declarations.py / members.py / vocabulary.py
+    + enclosing_packages() : parent namespaces + global
+  }
+  class UnityLanguage {
+    + class_stereotype() : <<scriptableObject>>
+    + relation_policy() : UnityRelationPolicy
+  }
+  class UnityRelationPolicy {
+    scriptable_objects : set[str]
+  }
+}
+
+Language <|-- JavaLanguage
+Language <|-- CSharpLanguage
+CSharpLanguage <|-- UnityLanguage
+RelationPolicy <|-- UnityRelationPolicy
+UnityLanguage ..> UnityRelationPolicy : creates
+Language --> TypeVocabulary
+Language ..> ParsedFile : parse_file
+Language ..> RelationPolicy
+RelationPolicy ..> FieldFacts
+ParsedFile *--> "0..*" TypeDecl
+ParsedFile *--> ResolutionHints
+TypeDecl *--> "0..*" Member
+TypeDecl *--> "0..*" FieldUsage
+TypeDecl --> TypeKind
+Member --> Visibility
+Member --> MemberKind
+Relation --> RelationLevel
+FileDiagram *--> "0..*" Relation
+style ..> StereotypeStyle
+REGISTRY --> "3" Language
+cli ..> CommandLine
+cli ..> pipeline
+pipeline ..> RunSummary
+pipeline ..> Language
+pipeline ..> relations
+pipeline ..> ProjectIndex
+pipeline ..> resolution
+pipeline ..> render
+pipeline ..> FileDiagram
+pipeline ..> package_views
+package_views ..> FileDiagram
+package_views ..> puml
+JavaLanguage ..> text_scan
+JavaLanguage ..> body_scan
+JavaLanguage ..> modifiers
+CSharpLanguage ..> text_scan
+CSharpLanguage ..> body_scan
+CSharpLanguage ..> modifiers
+JavaLanguage ..> style
+CSharpLanguage ..> style
+generate_class_diagramm_java ..> cli
+generate_class_diagramm ..> cli
+generate_class_diagramm_unity ..> cli
+@enduml
