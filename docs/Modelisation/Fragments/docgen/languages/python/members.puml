@@ -1,0 +1,49 @@
+namespace docgen.languages.python {
+class Attribute <<dataclass>> {
+  + name : str
+  + type_text : str | None
+  + is_static : bool
+}
+class members <<module>> {
+  + {static} CONSTRUCTOR
+  + {static} SELF
+  + {static} NO_RETURN
+  + {static} CLASS_VARIABLE
+  + {static} STATIC_METHOD
+  + {static} STATIC_DECORATORS
+  + {static} ABSTRACT_DECORATOR
+  + {static} PROPERTY_DECORATORS
+  + {static} ACCESSOR_DECORATORS
+  + {static} VARIADIC_PREFIX
+  + {static} KEYWORD_VARIADIC_PREFIX
+  + {static} BOUND_PARAMETERS
+  + {static} TYPING_HELPERS
+  + {static} TYPE_ALIAS
+  # {static} _KIND_ORDER
+  # {static} _class_level_attribute(ast.stmt) : Attribute | None
+  # {static} _annotated_parameters(FunctionNode) : dict[str, str]
+  # {static} _assigned_type(ast.expr | None, dict[str, str]) : str | None
+  # {static} _self_attribute_name(ast.expr) : str | None
+  # {static} _targets_and_values(ast.Assign) : list[tuple[ast.expr, ast.expr | None]]
+  # {static} _self_attributes(ast.AST, dict[str, str]) : list[Attribute]
+  # {static} _constructor_attributes(ast.ClassDef) : list[Attribute]
+  + {static} attributes_of(ast.ClassDef) : list[Attribute]
+  # {static} _parameter_text(ast.arg, str) : str
+  + {static} parameter_types(FunctionNode, bool) : list[str]
+  + {static} return_type(FunctionNode) : str | None
+  # {static} _is_accessor(FunctionNode) : bool
+  # {static} _function_member(FunctionNode) : Member
+  # {static} _attribute_member(Attribute, TypeVocabulary) : Member
+  + {static} members_of(ast.ClassDef, TypeVocabulary) : list[Member]
+  + {static} module_functions(ast.Module) : list[FunctionNode]
+  # {static} _is_typing_helper(ast.expr | None) : bool
+  # {static} _is_dunder(str) : bool
+  # {static} _annotated_variable(ast.AnnAssign) : list[Attribute]
+  # {static} _assigned_variables(ast.Assign) : list[Attribute]
+  # {static} _variables_bound_by(ast.stmt) : list[Attribute]
+  + {static} module_variables(ast.Module) : list[Attribute]
+  # {static} _module_function_member(FunctionNode) : Member
+  + {static} module_members(ast.Module, TypeVocabulary) : list[Member]
+  + {static} has_abstract_method(ast.ClassDef) : bool
+}
+}

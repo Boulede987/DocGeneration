@@ -1,0 +1,13 @@
+namespace docgen.languages.python {
+class usages <<module>> {
+  + {static} field_usages(ast.ClassDef) : list[FieldUsage]
+  # {static} _signature_types(Iterable[FunctionNode], bool) : list[str]
+  + {static} signature_types(ast.ClassDef) : list[str]
+  + {static} module_signature_types(ast.Module) : list[str]
+  # {static} _mentioned_type(ast.AST) : str | None
+  # {static} _mentioned_in(Iterable[ast.AST]) : list[str]
+  + {static} body_types(ast.ClassDef) : list[str]
+  + {static} module_body_types(ast.Module) : list[str]
+  + {static} newed_types(ast.ClassDef) : list[str]
+}
+}

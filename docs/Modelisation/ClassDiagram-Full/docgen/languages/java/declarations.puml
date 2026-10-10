@@ -1,0 +1,69 @@
+@startuml declarations
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.java {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + record_params : str | None
+  + body : str
+}
+class declarations <<module>> {
+  + {static} PACKAGE_RE
+  + {static} IMPORT_RE
+  + {static} TYPE_DECL
+  # {static} _EXTENDS
+  # {static} _IMPLEMENTS
+  # {static} _TEXT_BLOCK
+  # {static} _STRING_LITERAL
+  # {static} _CHAR_LITERAL
+  + {static} EMPTY_STRING
+  + {static} EMPTY_CHAR
+  + {static} CLASS_KIND
+  + {static} INTERFACE_KIND
+  + {static} strip_strings(str) : str
+  + {static} parse_package(str) : str | None
+  + {static} parse_imports(str) : dict[str, str]
+  # {static} _bases_after(re.Pattern[str], str) : list[str]
+  # {static} _supertypes(str, str) : tuple[str | None, list[str]]
+  + {static} find_type_headers(str) : list[TypeHeader]
+}
+}
+
+docgen.languages.java.declarations ..> docgen.languages.java.TypeHeader
+
+@enduml

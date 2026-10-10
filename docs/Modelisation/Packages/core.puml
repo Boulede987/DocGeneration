@@ -1,0 +1,348 @@
+@startuml core
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace docgen.core {
+class CommandLine <<dataclass>> {
+  + src_dirs : tuple[Path, ...]
+  + output_base : Path
+  + excludes : tuple[str, ...]
+}
+class cli <<module>> {
+  + {static} DEFAULT_OUT_DIR
+  + {static} LEGACY_PATH_COUNT
+  + {static} EXIT_OK
+  + {static} EXIT_ERRORS
+  + {static} CONSOLE_ENCODING
+  # {static} _exclude_pattern(str) : str
+  # {static} _parser(Language) : argparse.ArgumentParser
+  # {static} _has_sources(Path, str) : bool
+  # {static} _split_legacy_out(list[Path], Language) : tuple[list[Path], Path | None]
+  + {static} parse_command_line(Language, list[str], bool) : CommandLine
+  # {static} _use_utf8_console()
+  # {static} _print_summary(RunSummary, Path, str)
+  + {static} main(Language, list[str] | None, bool) : int
+}
+class FileDiagram <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + inner_lines : str[*]
+  + relations : Relation[*]
+  + name_packages : dict[str, str | None]
+  + base_relations() : list[Relation]
+  + full_relations() : list[Relation]
+  + qualified_name(str) : str
+  + render_relations(list[Relation]) : list[str]
+}
+class FileOutputPaths <<dataclass>> {
+  + base : Path
+  + base_fragment : Path
+  + full : Path
+  + full_fragment : Path
+  + {static} under(Path, Path) : FileOutputPaths
+}
+class file_diagram <<module>> {
+  + {static} PUML_SUFFIX
+  + {static} BASE_DIAGRAM_DIR
+  + {static} BASE_FRAGMENT_DIR
+  + {static} FULL_DIAGRAM_DIR
+  + {static} FULL_FRAGMENT_DIR
+  # {static} _file_body(FileDiagram, list[Relation]) : list[str]
+  + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
+}
+abstract class Language <<abstract>> {
+  + name : str
+  + source_suffix : str
+  + views_dir : str
+  + skinparam_lines : str[*]
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + {abstract} parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  # {static} _KIND_STEREOTYPES
+}
+enum TypeKind <<enum>> {
+  CLASS
+  INTERFACE
+  ENUM
+  RECORD
+  STRUCT
+  MODULE
+}
+enum Visibility <<enum>> {
+  PUBLIC
+  PRIVATE
+  PROTECTED
+  PACKAGE
+}
+enum MemberKind <<enum>> {
+  FIELD
+  PROPERTY
+  METHOD
+}
+class Member <<dataclass>> {
+  + kind : MemberKind
+  + name : str
+  + visibility : Visibility
+  + is_static : bool
+  + is_abstract : bool
+  + type : str | None
+  + params : str[*]
+}
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeDecl <<dataclass>> {
+  + name : str
+  + kind : TypeKind
+  + modifiers : str[*]
+  + base_class : str | None
+  + interfaces : str[*]
+  + members : Member[*]
+  + enum_values : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + additional_bases : str[*]
+  + bare_name : str
+  + is_abstract : bool
+  + is_static : bool
+  + has_usages : bool
+}
+class SourceText <<dataclass>> {
+  + relative_path : Path
+  + text : str
+  + stem : str
+}
+class ResolutionHints <<dataclass>> {
+  + type_imports : dict[str, str]
+  + namespace_imports : str[*]
+}
+class ParsedFile <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + declarations : TypeDecl[*]
+  + hints : ResolutionHints
+}
+class model <<module>> {
+  + {static} TYPE_PARAMETERS_START
+  + {static} ABSTRACT_MODIFIER
+  + {static} STATIC_MODIFIER
+  + {static} bare_type_name(str) : str
+}
+class _ViewVariant <<dataclass>> {
+  + dir_suffix : str
+  + select_relations : RelationSelector
+}
+class _PackageIndex <<dataclass>> {
+  + files_by_package : dict[str | None, list[FileDiagram]]
+  + file_names : dict[str | None, str]
+  + sorted_packages() : list[str | None]
+  + link(str | None) : str
+}
+class package_views <<module>> {
+  + {static} FULL_VIEWS_SUFFIX
+  + {static} OVERVIEW_NAME
+  + {static} PROJECT_NAME
+  # {static} _DEFAULT_PACKAGE
+  # {static} _PACKAGE_SEPARATOR
+  # {static} _SVG_SUFFIX
+  # {static} _EXTERNAL_STYLE : StereotypeStyle
+  # {static} _EXTERNAL_STEREOTYPE
+  + {static} RelationSelector
+  # {static} _VARIANTS
+  # {static} _display_name(str | None) : str
+  # {static} _alias(str | None) : str
+  # {static} _file_names_by_package(set[str | None]) : dict[str | None, str]
+  # {static} _build_index(list[FileDiagram]) : _PackageIndex
+  # {static} _declarations(list[FileDiagram]) : list[str]
+  # {static} _qualified_relation_lines(list[FileDiagram], RelationSelector) : list[str]
+  # {static} _target_packages(FileDiagram, list[Relation]) : dict[str, str | None]
+  # {static} _external_targets(str | None, list[FileDiagram], RelationSelector, _PackageIndex) : dict[str, str]
+  # {static} _external_stub(str, str) : list[str]
+  # {static} _build_package_diagram(str | None, RelationSelector, _PackageIndex, list[str]) : tuple[list[str], set[str]]
+  # {static} _build_overview_diagram(_PackageIndex, dict[str | None, set[str]], list[str]) : list[str]
+  # {static} _build_project_diagram(_PackageIndex, RelationSelector, list[str]) : list[str]
+  # {static} _write_views(_PackageIndex, _ViewVariant, Path, list[str])
+  + {static} generate_package_views(list[FileDiagram], Path, str, list[str]) : int
+}
+class SourceFile <<dataclass>> {
+  + path : Path
+  + relative_path : Path
+}
+class RunSummary <<dataclass>> {
+  + generated : int
+  + skipped : Path[*]
+  + errors : dict[Path, str]
+  + package_count : int
+  + excluded : int
+  + record_error(SourceFile, Exception)
+}
+class pipeline <<module>> {
+  + {static} SOURCE_ENCODING
+  + {static} CURRENT_FOLDER_PREFIX
+  + {static} normalized_pattern(str) : str
+  # {static} _is_excluded(SourceFile, Sequence[str]) : bool
+  + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
+  # {static} _relations_of(ParsedFile, set[str], Language, RelationPolicy) : list[Relation]
+  + {static} build_file_diagram(ParsedFile, ProjectIndex, Language, RelationPolicy) : FileDiagram
+  # {static} _parse_source(Language, SourceFile) : ParsedFile
+  # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
+  + {static} run(Language, Sequence[Path], Path, Sequence[str]) : RunSummary
+}
+class puml <<module>> {
+  + {static} namespace_block(str | None, list[str]) : list[str]
+  + {static} wrap_document(str, list[str], list[str]) : list[str]
+  + {static} write_file(Path, list[str])
+}
+enum RelationLevel <<enum>> {
+  INHERITANCE
+  STRONG
+  WEAK
+}
+class Relation <<dataclass>> {
+  + source : str
+  + arrow : str
+  + target : str
+  + level : RelationLevel
+  + multiplicity : str | None
+  + render(str, str) : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class relations <<module>> {
+  + {static} INHERITS
+  + {static} REALIZES
+  + {static} COMPOSES
+  + {static} ASSOCIATES
+  + {static} DEPENDS
+  + {static} MANY
+  # {static} _superclasses(TypeDecl) : list[str]
+  + {static} inherited_names(TypeDecl) : set[str]
+  + {static} inheritance_relations(TypeDecl, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeDecl, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeDecl, set[str], set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+}
+class render <<module>> {
+  + {static} STATIC_FLAG
+  + {static} ABSTRACT_FLAG
+  + {static} ENUM_STEREOTYPE
+  + {static} INTERFACE_STEREOTYPE
+  + {static} MEMBER_INDENT
+  # {static} _render_member(Member) : str
+  # {static} _header(TypeDecl, str | None) : str
+  + {static} render_declaration(TypeDecl, str | None) : list[str]
+}
+class ProjectIndex {
+  # _packages_by_name : dict[str, set[str | None]]
+  + known_types() : set[str]
+  + packages_of(str) : set[str | None]
+}
+class resolution <<module>> {
+  + {static} EnclosingPackages
+  + {static} resolve_package(str, ParsedFile, ProjectIndex, EnclosingPackages) : str | None
+}
+class StereotypeStyle <<dataclass>> {
+  + stereotype : str | None
+  + background : str
+  + border : str
+  + lines() : list[str]
+}
+class style <<module>> {
+  + {static} CLASS_BLOCK_OPEN
+  + {static} BLOCK_CLOSE
+  + {static} HIDE_ATTRIBUTE_ICONS
+  + {static} NO_SHADOWS
+  # {static} _HEADER
+  # {static} _BASE_STYLES
+  + {static} STATIC_STYLE : StereotypeStyle
+  + {static} ENUM_STYLE : StereotypeStyle
+  + {static} MODULE_STYLE : StereotypeStyle
+  + {static} skinparam_lines(list[StereotypeStyle], list[StereotypeStyle] | None) : list[str]
+}
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+class vocabulary <<module>> {
+  + {static} TYPE_PARAMETERS_END
+  # {static} _TYPE_TEXT_SEPARATORS
+  # {static} _TYPE_NAME
+  # {static} _ARRAY_SUFFIX
+  # {static} _UML_MANY_SUFFIX
+  # {static} _NULLABLE_MARK
+}
+}
+
+docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
+docgen.core.Language *--> docgen.core.TypeVocabulary
+docgen.core.Member *--> docgen.core.MemberKind
+docgen.core.Member *--> docgen.core.Visibility
+docgen.core.TypeDecl *--> "0..*" docgen.core.FieldUsage
+docgen.core.TypeDecl *--> "0..*" docgen.core.Member
+docgen.core.TypeDecl *--> docgen.core.TypeKind
+docgen.core.ParsedFile *--> docgen.core.ResolutionHints
+docgen.core.ParsedFile *--> "0..*" docgen.core.TypeDecl
+docgen.core._PackageIndex *--> docgen.core.FileDiagram
+docgen.core.Relation *--> docgen.core.RelationLevel
+
+@enduml

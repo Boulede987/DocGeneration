@@ -1,0 +1,14 @@
+namespace docgen.core {
+class ProjectIndex {
+  # _packages_by_name : dict[str, set[str | None]]
+  + known_types() : set[str]
+  + packages_of(str) : set[str | None]
+}
+class resolution <<module>> {
+  + {static} EnclosingPackages
+  + {static} resolve_package(str, ParsedFile, ProjectIndex, EnclosingPackages) : str | None
+}
+}
+
+docgen.core.resolution ..> docgen.core.ParsedFile
+docgen.core.resolution ..> docgen.core.ProjectIndex

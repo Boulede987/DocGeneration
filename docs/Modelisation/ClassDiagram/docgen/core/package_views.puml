@@ -1,0 +1,76 @@
+@startuml package_views
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.core {
+class _ViewVariant <<dataclass>> {
+  + dir_suffix : str
+  + select_relations : RelationSelector
+}
+class _PackageIndex <<dataclass>> {
+  + files_by_package : dict[str | None, list[FileDiagram]]
+  + file_names : dict[str | None, str]
+  + sorted_packages() : list[str | None]
+  + link(str | None) : str
+}
+class package_views <<module>> {
+  + {static} FULL_VIEWS_SUFFIX
+  + {static} OVERVIEW_NAME
+  + {static} PROJECT_NAME
+  # {static} _DEFAULT_PACKAGE
+  # {static} _PACKAGE_SEPARATOR
+  # {static} _SVG_SUFFIX
+  # {static} _EXTERNAL_STYLE : StereotypeStyle
+  # {static} _EXTERNAL_STEREOTYPE
+  + {static} RelationSelector
+  # {static} _VARIANTS
+  # {static} _display_name(str | None) : str
+  # {static} _alias(str | None) : str
+  # {static} _file_names_by_package(set[str | None]) : dict[str | None, str]
+  # {static} _build_index(list[FileDiagram]) : _PackageIndex
+  # {static} _declarations(list[FileDiagram]) : list[str]
+  # {static} _qualified_relation_lines(list[FileDiagram], RelationSelector) : list[str]
+  # {static} _target_packages(FileDiagram, list[Relation]) : dict[str, str | None]
+  # {static} _external_targets(str | None, list[FileDiagram], RelationSelector, _PackageIndex) : dict[str, str]
+  # {static} _external_stub(str, str) : list[str]
+  # {static} _build_package_diagram(str | None, RelationSelector, _PackageIndex, list[str]) : tuple[list[str], set[str]]
+  # {static} _build_overview_diagram(_PackageIndex, dict[str | None, set[str]], list[str]) : list[str]
+  # {static} _build_project_diagram(_PackageIndex, RelationSelector, list[str]) : list[str]
+  # {static} _write_views(_PackageIndex, _ViewVariant, Path, list[str])
+  + {static} generate_package_views(list[FileDiagram], Path, str, list[str]) : int
+}
+}
+
+docgen.core._PackageIndex *--> docgen.core.FileDiagram
+
+@enduml

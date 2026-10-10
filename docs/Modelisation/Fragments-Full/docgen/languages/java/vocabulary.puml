@@ -1,0 +1,11 @@
+namespace docgen.languages.java {
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} JAVA_VOCABULARY : TypeVocabulary
+  + {static} SKINPARAM_LINES
+}
+}
+
+docgen.languages.java.vocabulary ..> docgen.core.StereotypeStyle
+docgen.languages.java.vocabulary ..> docgen.core.TypeVocabulary

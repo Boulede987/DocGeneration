@@ -1,0 +1,8 @@
+namespace docgen.languages.csharp {
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} CSHARP_VOCABULARY : TypeVocabulary
+  + {static} STRUCT_STYLE : StereotypeStyle
+}
+}

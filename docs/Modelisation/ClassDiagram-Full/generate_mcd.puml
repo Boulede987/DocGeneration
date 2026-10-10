@@ -1,0 +1,53 @@
+@startuml generate_mcd
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+class generate_mcd <<module>> {
+  # {static} _TYPE_MAP
+  # {static} _SKIP_KEYWORDS
+  # {static} _SKINPARAM
+  # {static} _strip_comments(str) : str
+  + {static} parse_schema(str) : list[dict]
+  # {static} _parse_table(str, str) : dict
+  # {static} _mcd_type(str) : str
+  # {static} _detect_subtype(dict, dict) : str | None
+  + {static} classify_tables(list[dict]) : tuple
+  # {static} _fk_card(dict, list[str]) : str
+  # {static} _entity_fk_rels(dict, dict) : list[tuple[str, str, str]]
+  # {static} _junction_endpoints(dict) : list[str]
+  + {static} render_mcd(list[dict]) : str
+  + {static} main()
+}
+
+
+@enduml

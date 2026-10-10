@@ -1,0 +1,15 @@
+class generate_mld <<module>> {
+  # {static} _SKIP_KEYWORDS
+  # {static} _HTML_HEADER
+  # {static} _HTML_FOOTER
+  # {static} _strip_comments(str) : str
+  + {static} parse_schema(str) : list[dict]
+  # {static} _parse_table(str, str) : dict
+  # {static} _fk_display_map(list) : dict[str, str]
+  # {static} _fk(str) : str
+  # {static} _attr(str) : str
+  # {static} _table_line(dict) : str
+  + {static} render_mld_html(list[dict]) : str
+  + {static} render_puml(list[dict]) : str
+  + {static} main()
+}

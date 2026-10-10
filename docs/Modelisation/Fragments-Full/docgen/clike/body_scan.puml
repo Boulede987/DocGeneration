@@ -1,0 +1,12 @@
+namespace docgen.clike {
+class body_scan <<module>> {
+  # {static} _NEW_EXPRESSION
+  # {static} _LOCAL_VARIABLE
+  # {static} _STATIC_ACCESS
+  # {static} _FIELD_INITIALIZER_NEW
+  # {static} _is_method_block(str, str, re.Pattern[str], re.Pattern[str] | None) : bool
+  + {static} iter_method_bodies(str, re.Pattern[str], re.Pattern[str] | None) : Iterator[str]
+  + {static} scan_body_types(str) : list[str]
+  + {static} instantiated_type_texts(Iterable[str], Iterable[str]) : list[str]
+}
+}

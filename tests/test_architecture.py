@@ -139,3 +139,13 @@ def test_adding_a_language_guide_exists_and_covers_registration():
 
     assert guide.is_file()
     assert "REGISTRY" in guide.read_text(encoding="utf-8")
+
+
+def test_readme_documents_every_registered_language():
+    from docgen.languages import REGISTRY
+
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+
+    missing = [name for name in REGISTRY if f"generate_class_diagramm_{name}.py" not in readme and name != "csharp"]
+    assert missing == []
+    assert "generate_class_diagramm.py" in readme  # the C# script keeps its historical name

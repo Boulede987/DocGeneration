@@ -1,0 +1,9 @@
+namespace docgen.languages.python {
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} PYTHON_VOCABULARY : TypeVocabulary
+  + {static} DATACLASS_STYLE : StereotypeStyle
+  + {static} SKINPARAM_LINES
+}
+}

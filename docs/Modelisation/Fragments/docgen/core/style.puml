@@ -1,0 +1,20 @@
+namespace docgen.core {
+class StereotypeStyle <<dataclass>> {
+  + stereotype : str | None
+  + background : str
+  + border : str
+  + lines() : list[str]
+}
+class style <<module>> {
+  + {static} CLASS_BLOCK_OPEN
+  + {static} BLOCK_CLOSE
+  + {static} HIDE_ATTRIBUTE_ICONS
+  + {static} NO_SHADOWS
+  # {static} _HEADER
+  # {static} _BASE_STYLES
+  + {static} STATIC_STYLE : StereotypeStyle
+  + {static} ENUM_STYLE : StereotypeStyle
+  + {static} MODULE_STYLE : StereotypeStyle
+  + {static} skinparam_lines(list[StereotypeStyle], list[StereotypeStyle] | None) : list[str]
+}
+}

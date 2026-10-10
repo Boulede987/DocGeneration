@@ -1,0 +1,26 @@
+namespace docgen.core {
+abstract class Language <<abstract>> {
+  + name : str
+  + source_suffix : str
+  + views_dir : str
+  + skinparam_lines : str[*]
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + {abstract} parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  # {static} _KIND_STEREOTYPES
+}
+}
+
+docgen.core.Language *--> docgen.core.TypeVocabulary
+docgen.core.Language ..> docgen.core.ParsedFile
+docgen.core.Language ..> docgen.core.RelationPolicy
+docgen.core.Language ..> docgen.core.SourceText
+docgen.core.Language ..> docgen.core.TypeDecl
+docgen.core.language ..> docgen.core.TypeKind

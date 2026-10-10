@@ -1,0 +1,17 @@
+namespace docgen.languages.java {
+class JavaLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile
+  # _declaration(TypeHeader) : TypeDecl
+  # _fill_class_like(TypeDecl, TypeHeader)
+}
+class language <<module>> {
+  # {static} _KINDS
+}
+}
+
+docgen.languages.java.JavaLanguage --|> docgen.core.Language

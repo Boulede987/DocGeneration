@@ -1,0 +1,62 @@
+@startuml cli
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.core {
+class CommandLine <<dataclass>> {
+  + src_dirs : tuple[Path, ...]
+  + output_base : Path
+  + excludes : tuple[str, ...]
+}
+class cli <<module>> {
+  + {static} DEFAULT_OUT_DIR
+  + {static} LEGACY_PATH_COUNT
+  + {static} EXIT_OK
+  + {static} EXIT_ERRORS
+  + {static} CONSOLE_ENCODING
+  # {static} _exclude_pattern(str) : str
+  # {static} _parser(Language) : argparse.ArgumentParser
+  # {static} _has_sources(Path, str) : bool
+  # {static} _split_legacy_out(list[Path], Language) : tuple[list[Path], Path | None]
+  + {static} parse_command_line(Language, list[str], bool) : CommandLine
+  # {static} _use_utf8_console()
+  # {static} _print_summary(RunSummary, Path, str)
+  + {static} main(Language, list[str] | None, bool) : int
+}
+}
+
+docgen.core.cli ..> docgen.core.CommandLine
+docgen.core.cli ..> docgen.core.Language
+docgen.core.cli ..> docgen.core.RunSummary
+
+@enduml

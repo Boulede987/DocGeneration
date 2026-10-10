@@ -1,0 +1,58 @@
+@startuml _overview
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+package "default_package" as default_package [[default_package.svg]] {
+}
+package "docgen.clike" as docgen_clike [[clike.svg]] {
+}
+package "docgen.core" as docgen_core [[core.svg]] {
+}
+package "docgen.languages" as docgen_languages [[languages.svg]] {
+}
+package "docgen.languages.csharp" as docgen_languages_csharp [[csharp.svg]] {
+}
+package "docgen.languages.java" as docgen_languages_java [[java.svg]] {
+}
+package "docgen.languages.python" as docgen_languages_python [[python.svg]] {
+}
+package "docgen.languages.unity" as docgen_languages_unity [[unity.svg]] {
+}
+
+docgen_languages_csharp ..> docgen_core
+docgen_languages_java ..> docgen_core
+docgen_languages_python ..> docgen_core
+docgen_languages_unity ..> docgen_core
+docgen_languages_unity ..> docgen_languages_csharp
+
+@enduml

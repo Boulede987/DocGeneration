@@ -1,0 +1,60 @@
+@startuml declarations
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.python {
+class declarations <<module>> {
+  + {static} ENUM_BASES
+  + {static} PROTOCOL_BASE
+  + {static} ABSTRACT_BASE
+  + {static} GENERIC_BASE
+  + {static} OBJECT_BASE
+  + {static} DATACLASS_MODIFIER
+  # {static} _ENUM_CONFIGURATION_PREFIX
+  # {static} _classes_in(list[ast.stmt]) : Iterator[ast.ClassDef]
+  + {static} base_names(ast.ClassDef) : list[str]
+  # {static} _kind(list[str]) : TypeKind
+  # {static} _modifiers(ast.ClassDef, list[str]) : frozenset[str]
+  # {static} _enum_member_names(ast.stmt) : list[str]
+  # {static} _enum_values(ast.ClassDef) : list[str]
+  # {static} _declaration(ast.ClassDef, TypeVocabulary) : TypeDecl
+  + {static} class_declarations(ast.Module, TypeVocabulary) : list[TypeDecl]
+  + {static} module_declaration(ast.Module, str, TypeVocabulary) : TypeDecl | None
+}
+}
+
+docgen.languages.python.declarations ..> docgen.core.TypeDecl
+docgen.languages.python.declarations ..> docgen.core.TypeKind
+docgen.languages.python.declarations ..> docgen.core.TypeVocabulary
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml file_diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.core {
+class FileDiagram <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + inner_lines : str[*]
+  + relations : Relation[*]
+  + name_packages : dict[str, str | None]
+  + base_relations() : list[Relation]
+  + full_relations() : list[Relation]
+  + qualified_name(str) : str
+  + render_relations(list[Relation]) : list[str]
+}
+class FileOutputPaths <<dataclass>> {
+  + base : Path
+  + base_fragment : Path
+  + full : Path
+  + full_fragment : Path
+  + {static} under(Path, Path) : FileOutputPaths
+}
+class file_diagram <<module>> {
+  + {static} PUML_SUFFIX
+  + {static} BASE_DIAGRAM_DIR
+  + {static} BASE_FRAGMENT_DIR
+  + {static} FULL_DIAGRAM_DIR
+  + {static} FULL_FRAGMENT_DIR
+  # {static} _file_body(FileDiagram, list[Relation]) : list[str]
+  + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
+}
+}
+
+docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
+
+@enduml

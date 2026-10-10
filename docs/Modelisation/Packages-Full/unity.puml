@@ -1,0 +1,89 @@
+@startuml unity
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace docgen.languages.unity {
+class UnityRelationPolicy {
+  + scriptable_objects : str[*]
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class UnityLanguage {
+  + {static} name
+  + {static} skinparam_lines
+  + {static} vocabulary : TypeVocabulary
+  + {static} hidden_bases
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} SCRIPTABLE_OBJECT
+  + {static} AGGREGATES
+  + {static} UNITY_BASES
+  + {static} UNITY_PRIMITIVES
+  + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
+  + {static} SCRIPTABLE_OBJECT_STEREOTYPE
+  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+}
+}
+class docgen.core.FieldFacts <<external>> [[core.svg]] {
+}
+class docgen.core.ParsedFile <<external>> [[core.svg]] {
+}
+class docgen.core.RelationLevel <<external>> [[core.svg]] {
+}
+class docgen.core.RelationPolicy <<external>> [[core.svg]] {
+}
+class docgen.core.StereotypeStyle <<external>> [[core.svg]] {
+}
+class docgen.core.TypeDecl <<external>> [[core.svg]] {
+}
+class docgen.languages.csharp.CSharpLanguage <<external>> [[csharp.svg]] {
+}
+
+docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.FieldFacts
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.RelationLevel
+docgen.languages.unity.UnityLanguage ..> docgen.core.ParsedFile
+docgen.languages.unity.UnityLanguage ..> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage ..> docgen.core.TypeDecl
+docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
+docgen.languages.unity.language ..> docgen.core.ParsedFile
+docgen.languages.unity.language ..> docgen.core.StereotypeStyle
+
+@enduml

@@ -1,0 +1,7 @@
+namespace docgen.core {
+class puml <<module>> {
+  + {static} namespace_block(str | None, list[str]) : list[str]
+  + {static} wrap_document(str, list[str], list[str]) : list[str]
+  + {static} write_file(Path, list[str])
+}
+}

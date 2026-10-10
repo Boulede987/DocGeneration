@@ -1,0 +1,10 @@
+namespace docgen.languages.python {
+class modules <<module>> {
+  + {static} PACKAGE_SEPARATOR
+  + {static} package_of(Path) : str | None
+  # {static} _absolute_module(ast.ImportFrom, str | None) : str | None
+  # {static} _module_and_parent(str) : set[str]
+  # {static} _imported_paths(ast.AST, str | None) : set[str]
+  + {static} import_hints(ast.Module, str | None) : ResolutionHints
+}
+}

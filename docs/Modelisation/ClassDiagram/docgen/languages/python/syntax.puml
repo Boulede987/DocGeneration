@@ -1,0 +1,61 @@
+@startuml syntax
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.python {
+class _UnquoteForwardReferences {
+  + visit_Constant(ast.Constant) : ast.AST
+  + visit_Subscript(ast.Subscript) : ast.AST
+}
+class syntax <<module>> {
+  + {static} DUNDER
+  + {static} PROTECTED_PREFIX
+  + {static} LITERAL
+  + {static} ANNOTATED
+  + {static} FunctionNode
+  # {static} _NESTED_SCOPES
+  # {static} _parsed_type_expression(str) : ast.expr | None
+  + {static} type_text(ast.expr) : str
+  + {static} simple_name(ast.expr) : str | None
+  + {static} decorator_names(FunctionNode | ast.ClassDef) : set[str]
+  + {static} visibility_of(str) : Visibility
+  + {static} functions_of(ast.ClassDef) : Iterator[FunctionNode]
+  + {static} walk_own_scope(FunctionNode) : Iterator[ast.AST]
+  + {static} looks_like_class_name(str) : bool
+  + {static} constructor_called(ast.AST | None) : str | None
+}
+}
+
+docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
+
+@enduml

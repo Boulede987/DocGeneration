@@ -1,0 +1,763 @@
+@startuml _project
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+class generate_mcd <<module>> {
+  # {static} _TYPE_MAP
+  # {static} _SKIP_KEYWORDS
+  # {static} _SKINPARAM
+  # {static} _strip_comments(str) : str
+  + {static} parse_schema(str) : list[dict]
+  # {static} _parse_table(str, str) : dict
+  # {static} _mcd_type(str) : str
+  # {static} _detect_subtype(dict, dict) : str | None
+  + {static} classify_tables(list[dict]) : tuple
+  # {static} _fk_card(dict, list[str]) : str
+  # {static} _entity_fk_rels(dict, dict) : list[tuple[str, str, str]]
+  # {static} _junction_endpoints(dict) : list[str]
+  + {static} render_mcd(list[dict]) : str
+  + {static} main()
+}
+class generate_mld <<module>> {
+  # {static} _SKIP_KEYWORDS
+  # {static} _HTML_HEADER
+  # {static} _HTML_FOOTER
+  # {static} _strip_comments(str) : str
+  + {static} parse_schema(str) : list[dict]
+  # {static} _parse_table(str, str) : dict
+  # {static} _fk_display_map(list) : dict[str, str]
+  # {static} _fk(str) : str
+  # {static} _attr(str) : str
+  # {static} _table_line(dict) : str
+  + {static} render_mld_html(list[dict]) : str
+  + {static} render_puml(list[dict]) : str
+  + {static} main()
+}
+namespace docgen.clike {
+class body_scan <<module>> {
+  # {static} _NEW_EXPRESSION
+  # {static} _LOCAL_VARIABLE
+  # {static} _STATIC_ACCESS
+  # {static} _FIELD_INITIALIZER_NEW
+  # {static} _is_method_block(str, str, re.Pattern[str], re.Pattern[str] | None) : bool
+  + {static} iter_method_bodies(str, re.Pattern[str], re.Pattern[str] | None) : Iterator[str]
+  + {static} scan_body_types(str) : list[str]
+  + {static} instantiated_type_texts(Iterable[str], Iterable[str]) : list[str]
+}
+class modifiers <<module>> {
+  + {static} VisibilityRules
+  + {static} visibility_from(str, VisibilityRules) : Visibility
+  + {static} has_modifier(str, *str) : bool
+}
+class text_scan <<module>> {
+  # {static} _BLOCK_COMMENT
+  # {static} _LINE_COMMENT
+  + {static} BLOCK_OPEN
+  + {static} BLOCK_CLOSE
+  + {static} STATEMENT_END
+  + {static} LIST_SEPARATOR
+  # {static} _ANY_OPENING_BRACKET
+  # {static} _ANY_CLOSING_BRACKET
+  # {static} _TYPE_ARGUMENT_OPENING
+  # {static} _TYPE_ARGUMENT_CLOSING
+  + {static} PROPERTY_PLACEHOLDER
+  + {static} BODY_PLACEHOLDER
+  + {static} strip_c_comments(str) : str
+  + {static} close_brace(str, int) : int
+  + {static} split_top_level(str, str) : tuple[str, str]
+  + {static} split_by_comma(str) : list[str]
+  # {static} _braced_statement(str, str, re.Pattern[str], re.Pattern[str] | None) : str | None
+  + {static} flatten(str, re.Pattern[str], re.Pattern[str] | None) : list[str]
+}
+}
+namespace docgen.core {
+class CommandLine <<dataclass>> {
+  + src_dirs : tuple[Path, ...]
+  + output_base : Path
+  + excludes : tuple[str, ...]
+}
+class cli <<module>> {
+  + {static} DEFAULT_OUT_DIR
+  + {static} LEGACY_PATH_COUNT
+  + {static} EXIT_OK
+  + {static} EXIT_ERRORS
+  + {static} CONSOLE_ENCODING
+  # {static} _exclude_pattern(str) : str
+  # {static} _parser(Language) : argparse.ArgumentParser
+  # {static} _has_sources(Path, str) : bool
+  # {static} _split_legacy_out(list[Path], Language) : tuple[list[Path], Path | None]
+  + {static} parse_command_line(Language, list[str], bool) : CommandLine
+  # {static} _use_utf8_console()
+  # {static} _print_summary(RunSummary, Path, str)
+  + {static} main(Language, list[str] | None, bool) : int
+}
+class FileDiagram <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + inner_lines : str[*]
+  + relations : Relation[*]
+  + name_packages : dict[str, str | None]
+  + base_relations() : list[Relation]
+  + full_relations() : list[Relation]
+  + qualified_name(str) : str
+  + render_relations(list[Relation]) : list[str]
+}
+class FileOutputPaths <<dataclass>> {
+  + base : Path
+  + base_fragment : Path
+  + full : Path
+  + full_fragment : Path
+  + {static} under(Path, Path) : FileOutputPaths
+}
+class file_diagram <<module>> {
+  + {static} PUML_SUFFIX
+  + {static} BASE_DIAGRAM_DIR
+  + {static} BASE_FRAGMENT_DIR
+  + {static} FULL_DIAGRAM_DIR
+  + {static} FULL_FRAGMENT_DIR
+  # {static} _file_body(FileDiagram, list[Relation]) : list[str]
+  + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
+}
+abstract class Language <<abstract>> {
+  + name : str
+  + source_suffix : str
+  + views_dir : str
+  + skinparam_lines : str[*]
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + {abstract} parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  # {static} _KIND_STEREOTYPES
+}
+enum TypeKind <<enum>> {
+  CLASS
+  INTERFACE
+  ENUM
+  RECORD
+  STRUCT
+  MODULE
+}
+enum Visibility <<enum>> {
+  PUBLIC
+  PRIVATE
+  PROTECTED
+  PACKAGE
+}
+enum MemberKind <<enum>> {
+  FIELD
+  PROPERTY
+  METHOD
+}
+class Member <<dataclass>> {
+  + kind : MemberKind
+  + name : str
+  + visibility : Visibility
+  + is_static : bool
+  + is_abstract : bool
+  + type : str | None
+  + params : str[*]
+}
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeDecl <<dataclass>> {
+  + name : str
+  + kind : TypeKind
+  + modifiers : str[*]
+  + base_class : str | None
+  + interfaces : str[*]
+  + members : Member[*]
+  + enum_values : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + additional_bases : str[*]
+  + bare_name : str
+  + is_abstract : bool
+  + is_static : bool
+  + has_usages : bool
+}
+class SourceText <<dataclass>> {
+  + relative_path : Path
+  + text : str
+  + stem : str
+}
+class ResolutionHints <<dataclass>> {
+  + type_imports : dict[str, str]
+  + namespace_imports : str[*]
+}
+class ParsedFile <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + declarations : TypeDecl[*]
+  + hints : ResolutionHints
+}
+class model <<module>> {
+  + {static} TYPE_PARAMETERS_START
+  + {static} ABSTRACT_MODIFIER
+  + {static} STATIC_MODIFIER
+  + {static} bare_type_name(str) : str
+}
+class _ViewVariant <<dataclass>> {
+  + dir_suffix : str
+  + select_relations : RelationSelector
+}
+class _PackageIndex <<dataclass>> {
+  + files_by_package : dict[str | None, list[FileDiagram]]
+  + file_names : dict[str | None, str]
+  + sorted_packages() : list[str | None]
+  + link(str | None) : str
+}
+class package_views <<module>> {
+  + {static} FULL_VIEWS_SUFFIX
+  + {static} OVERVIEW_NAME
+  + {static} PROJECT_NAME
+  # {static} _DEFAULT_PACKAGE
+  # {static} _PACKAGE_SEPARATOR
+  # {static} _SVG_SUFFIX
+  # {static} _EXTERNAL_STYLE : StereotypeStyle
+  # {static} _EXTERNAL_STEREOTYPE
+  + {static} RelationSelector
+  # {static} _VARIANTS
+  # {static} _display_name(str | None) : str
+  # {static} _alias(str | None) : str
+  # {static} _file_names_by_package(set[str | None]) : dict[str | None, str]
+  # {static} _build_index(list[FileDiagram]) : _PackageIndex
+  # {static} _declarations(list[FileDiagram]) : list[str]
+  # {static} _qualified_relation_lines(list[FileDiagram], RelationSelector) : list[str]
+  # {static} _target_packages(FileDiagram, list[Relation]) : dict[str, str | None]
+  # {static} _external_targets(str | None, list[FileDiagram], RelationSelector, _PackageIndex) : dict[str, str]
+  # {static} _external_stub(str, str) : list[str]
+  # {static} _build_package_diagram(str | None, RelationSelector, _PackageIndex, list[str]) : tuple[list[str], set[str]]
+  # {static} _build_overview_diagram(_PackageIndex, dict[str | None, set[str]], list[str]) : list[str]
+  # {static} _build_project_diagram(_PackageIndex, RelationSelector, list[str]) : list[str]
+  # {static} _write_views(_PackageIndex, _ViewVariant, Path, list[str])
+  + {static} generate_package_views(list[FileDiagram], Path, str, list[str]) : int
+}
+class SourceFile <<dataclass>> {
+  + path : Path
+  + relative_path : Path
+}
+class RunSummary <<dataclass>> {
+  + generated : int
+  + skipped : Path[*]
+  + errors : dict[Path, str]
+  + package_count : int
+  + excluded : int
+  + record_error(SourceFile, Exception)
+}
+class pipeline <<module>> {
+  + {static} SOURCE_ENCODING
+  + {static} CURRENT_FOLDER_PREFIX
+  + {static} normalized_pattern(str) : str
+  # {static} _is_excluded(SourceFile, Sequence[str]) : bool
+  + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
+  # {static} _relations_of(ParsedFile, set[str], Language, RelationPolicy) : list[Relation]
+  + {static} build_file_diagram(ParsedFile, ProjectIndex, Language, RelationPolicy) : FileDiagram
+  # {static} _parse_source(Language, SourceFile) : ParsedFile
+  # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
+  + {static} run(Language, Sequence[Path], Path, Sequence[str]) : RunSummary
+}
+class puml <<module>> {
+  + {static} namespace_block(str | None, list[str]) : list[str]
+  + {static} wrap_document(str, list[str], list[str]) : list[str]
+  + {static} write_file(Path, list[str])
+}
+enum RelationLevel <<enum>> {
+  INHERITANCE
+  STRONG
+  WEAK
+}
+class Relation <<dataclass>> {
+  + source : str
+  + arrow : str
+  + target : str
+  + level : RelationLevel
+  + multiplicity : str | None
+  + render(str, str) : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class relations <<module>> {
+  + {static} INHERITS
+  + {static} REALIZES
+  + {static} COMPOSES
+  + {static} ASSOCIATES
+  + {static} DEPENDS
+  + {static} MANY
+  # {static} _superclasses(TypeDecl) : list[str]
+  + {static} inherited_names(TypeDecl) : set[str]
+  + {static} inheritance_relations(TypeDecl, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeDecl, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeDecl, set[str], set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+}
+class render <<module>> {
+  + {static} STATIC_FLAG
+  + {static} ABSTRACT_FLAG
+  + {static} ENUM_STEREOTYPE
+  + {static} INTERFACE_STEREOTYPE
+  + {static} MEMBER_INDENT
+  # {static} _render_member(Member) : str
+  # {static} _header(TypeDecl, str | None) : str
+  + {static} render_declaration(TypeDecl, str | None) : list[str]
+}
+class ProjectIndex {
+  # _packages_by_name : dict[str, set[str | None]]
+  + known_types() : set[str]
+  + packages_of(str) : set[str | None]
+}
+class resolution <<module>> {
+  + {static} EnclosingPackages
+  + {static} resolve_package(str, ParsedFile, ProjectIndex, EnclosingPackages) : str | None
+}
+class StereotypeStyle <<dataclass>> {
+  + stereotype : str | None
+  + background : str
+  + border : str
+  + lines() : list[str]
+}
+class style <<module>> {
+  + {static} CLASS_BLOCK_OPEN
+  + {static} BLOCK_CLOSE
+  + {static} HIDE_ATTRIBUTE_ICONS
+  + {static} NO_SHADOWS
+  # {static} _HEADER
+  # {static} _BASE_STYLES
+  + {static} STATIC_STYLE : StereotypeStyle
+  + {static} ENUM_STYLE : StereotypeStyle
+  + {static} MODULE_STYLE : StereotypeStyle
+  + {static} skinparam_lines(list[StereotypeStyle], list[StereotypeStyle] | None) : list[str]
+}
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+class vocabulary <<module>> {
+  + {static} TYPE_PARAMETERS_END
+  # {static} _TYPE_TEXT_SEPARATORS
+  # {static} _TYPE_NAME
+  # {static} _ARRAY_SUFFIX
+  # {static} _UML_MANY_SUFFIX
+  # {static} _NULLABLE_MARK
+}
+}
+namespace docgen.languages {
+class languages <<module>> {
+  + {static} REGISTRY : dict[str, Language]
+}
+}
+namespace docgen.languages.csharp {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + body : str
+}
+class declarations <<module>> {
+  + {static} NAMESPACE_RE
+  + {static} USING_RE
+  + {static} TYPE_DECL
+  # {static} _GENERIC_CONSTRAINTS
+  # {static} _INTERFACE_NAME
+  # {static} _VERBATIM_STRING
+  # {static} _STRING_LITERAL
+  # {static} _CHAR_LITERAL
+  + {static} EMPTY_STRING
+  + {static} EMPTY_CHAR
+  + {static} strip_strings(str) : str
+  + {static} parse_namespace(str) : str | None
+  + {static} parse_usings(str) : set[str]
+  # {static} _supertypes(str) : tuple[str | None, list[str]]
+  + {static} find_type_headers(str) : list[TypeHeader]
+}
+class CSharpLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  # _declaration(TypeHeader) : TypeDecl
+  # _fill_class_like(TypeDecl, TypeHeader)
+}
+class language <<module>> {
+  # {static} _KINDS
+  # {static} _NAMESPACE_SEPARATOR
+}
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+class members <<module>> {
+  + {static} MODIFIERS_PATTERN
+  + {static} NESTED_TYPE
+  + {static} PROPERTY_INNER
+  + {static} ATTRIBUTES
+  + {static} PROP_RE
+  + {static} METHOD_RE
+  + {static} FIELD_RE
+  # {static} _INTERFACE_METHOD
+  # {static} _INTERFACE_PROPERTY
+  # {static} _INTERFACE_DECLARATION_NOISE
+  # {static} _PARAMETER_MODIFIER
+  # {static} _ENUM_ATTRIBUTE
+  # {static} _ENUM_VALUE_ASSIGNMENT
+  # {static} _ENUM_SEPARATORS
+  # {static} _IDENTIFIER
+  # {static} _VISIBILITY_RULES
+  # {static} _NO_RETURN_TYPES
+  # {static} _SERIALIZED_ATTRIBUTE
+  # {static} _PROPERTY_MARK
+  # {static} _PUBLIC
+  # {static} _ABSTRACT
+  # {static} _STATIC_KEYWORDS
+  # {static} _CALL_OPEN
+  # {static} _KIND_ORDER
+  # {static} _param_types(str) : list[str]
+  # {static} _statements(str) : list[str]
+  # {static} _typed_member(MemberKind, re.Match[str], str | None) : Member
+  # {static} _parse_member(str, str, TypeVocabulary) : Member | None
+  + {static} class_members(str, str, TypeVocabulary) : list[Member]
+  # {static} _interface_member(str) : Member | None
+  + {static} interface_members(str) : list[Member]
+  + {static} enum_values(str) : list[str]
+  # {static} _field_usage(str, re.Match[str]) : FieldUsage
+  # {static} _add_member_types(str, str, MemberTypes)
+  + {static} member_types(str, str) : MemberTypes
+  # {static} _method_bodies(str) : Iterator[str]
+  + {static} body_types(str) : list[str]
+  + {static} newed_types(str) : list[str]
+}
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} CSHARP_VOCABULARY : TypeVocabulary
+  + {static} STRUCT_STYLE : StereotypeStyle
+}
+}
+namespace docgen.languages.java {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + record_params : str | None
+  + body : str
+}
+class declarations <<module>> {
+  + {static} PACKAGE_RE
+  + {static} IMPORT_RE
+  + {static} TYPE_DECL
+  # {static} _EXTENDS
+  # {static} _IMPLEMENTS
+  # {static} _TEXT_BLOCK
+  # {static} _STRING_LITERAL
+  # {static} _CHAR_LITERAL
+  + {static} EMPTY_STRING
+  + {static} EMPTY_CHAR
+  + {static} CLASS_KIND
+  + {static} INTERFACE_KIND
+  + {static} strip_strings(str) : str
+  + {static} parse_package(str) : str | None
+  + {static} parse_imports(str) : dict[str, str]
+  # {static} _bases_after(re.Pattern[str], str) : list[str]
+  # {static} _supertypes(str, str) : tuple[str | None, list[str]]
+  + {static} find_type_headers(str) : list[TypeHeader]
+}
+class JavaLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile
+  # _declaration(TypeHeader) : TypeDecl
+  # _fill_class_like(TypeDecl, TypeHeader)
+}
+class language <<module>> {
+  # {static} _KINDS
+}
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+class members <<module>> {
+  + {static} MODIFIERS_PATTERN
+  + {static} NESTED_TYPE
+  + {static} ANNOTATIONS
+  + {static} METHOD_RE
+  + {static} FIELD_RE
+  # {static} _INTERFACE_METHOD
+  # {static} _INTERFACE_CONSTANT
+  # {static} _INTERFACE_MODIFIERS
+  # {static} _DEFAULT_METHOD_BODY
+  # {static} _FINAL_PARAMETER
+  # {static} _ENUM_ANNOTATION
+  # {static} _ENUM_CONSTRUCTOR_ARGUMENTS
+  # {static} _ENUM_CONSTANT_BODY
+  # {static} _IDENTIFIER
+  # {static} _VISIBILITY_RULES
+  # {static} _VOID
+  # {static} _VARARGS
+  # {static} _ARRAY
+  # {static} _PUBLIC
+  # {static} _STATIC
+  # {static} _ABSTRACT
+  # {static} _CALL_OPEN
+  # {static} _param_types(str) : list[str]
+  # {static} _statements(str) : list[str]
+  # {static} _typed_member(MemberKind, str, str, str | None, list[str]) : Member
+  # {static} _method(re.Match[str]) : Member
+  # {static} _parse_member(str, str, TypeVocabulary) : Member | None
+  + {static} class_members(str, str, TypeVocabulary) : list[Member]
+  + {static} record_components(str | None) : list[tuple[str, str]]
+  + {static} component_members(str | None, TypeVocabulary) : list[Member]
+  # {static} _interface_member(str) : Member | None
+  + {static} interface_members(str) : list[Member]
+  + {static} enum_values(str) : list[str]
+  # {static} _add_member_types(str, str, MemberTypes)
+  + {static} member_types(str, str) : MemberTypes
+  + {static} body_types(str) : list[str]
+  + {static} newed_types(str) : list[str]
+}
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} JAVA_VOCABULARY : TypeVocabulary
+  + {static} SKINPARAM_LINES
+}
+}
+namespace docgen.languages.python {
+class declarations <<module>> {
+  + {static} ENUM_BASES
+  + {static} PROTOCOL_BASE
+  + {static} ABSTRACT_BASE
+  + {static} GENERIC_BASE
+  + {static} OBJECT_BASE
+  + {static} DATACLASS_MODIFIER
+  # {static} _ENUM_CONFIGURATION_PREFIX
+  # {static} _classes_in(list[ast.stmt]) : Iterator[ast.ClassDef]
+  + {static} base_names(ast.ClassDef) : list[str]
+  # {static} _kind(list[str]) : TypeKind
+  # {static} _modifiers(ast.ClassDef, list[str]) : frozenset[str]
+  # {static} _enum_member_names(ast.stmt) : list[str]
+  # {static} _enum_values(ast.ClassDef) : list[str]
+  # {static} _declaration(ast.ClassDef, TypeVocabulary) : TypeDecl
+  + {static} class_declarations(ast.Module, TypeVocabulary) : list[TypeDecl]
+  + {static} module_declaration(ast.Module, str, TypeVocabulary) : TypeDecl | None
+}
+class PythonLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + {static} hidden_bases
+  + parse_file(SourceText) : ParsedFile
+  + class_stereotype(TypeDecl) : str | None
+}
+class language <<module>> {
+  + {static} DATACLASS_STEREOTYPE
+  + {static} PACKAGE_MODULE_STEM
+  + {static} MODULE_BOX_SUFFIX
+  + {static} HIDDEN_BASES
+  # {static} _module_name(SourceText, set[str]) : str
+}
+class Attribute <<dataclass>> {
+  + name : str
+  + type_text : str | None
+  + is_static : bool
+}
+class members <<module>> {
+  + {static} CONSTRUCTOR
+  + {static} SELF
+  + {static} NO_RETURN
+  + {static} CLASS_VARIABLE
+  + {static} STATIC_METHOD
+  + {static} STATIC_DECORATORS
+  + {static} ABSTRACT_DECORATOR
+  + {static} PROPERTY_DECORATORS
+  + {static} ACCESSOR_DECORATORS
+  + {static} VARIADIC_PREFIX
+  + {static} KEYWORD_VARIADIC_PREFIX
+  + {static} BOUND_PARAMETERS
+  + {static} TYPING_HELPERS
+  + {static} TYPE_ALIAS
+  # {static} _KIND_ORDER
+  # {static} _class_level_attribute(ast.stmt) : Attribute | None
+  # {static} _annotated_parameters(FunctionNode) : dict[str, str]
+  # {static} _assigned_type(ast.expr | None, dict[str, str]) : str | None
+  # {static} _self_attribute_name(ast.expr) : str | None
+  # {static} _targets_and_values(ast.Assign) : list[tuple[ast.expr, ast.expr | None]]
+  # {static} _self_attributes(ast.AST, dict[str, str]) : list[Attribute]
+  # {static} _constructor_attributes(ast.ClassDef) : list[Attribute]
+  + {static} attributes_of(ast.ClassDef) : list[Attribute]
+  # {static} _parameter_text(ast.arg, str) : str
+  + {static} parameter_types(FunctionNode, bool) : list[str]
+  + {static} return_type(FunctionNode) : str | None
+  # {static} _is_accessor(FunctionNode) : bool
+  # {static} _function_member(FunctionNode) : Member
+  # {static} _attribute_member(Attribute, TypeVocabulary) : Member
+  + {static} members_of(ast.ClassDef, TypeVocabulary) : list[Member]
+  + {static} module_functions(ast.Module) : list[FunctionNode]
+  # {static} _is_typing_helper(ast.expr | None) : bool
+  # {static} _is_dunder(str) : bool
+  # {static} _annotated_variable(ast.AnnAssign) : list[Attribute]
+  # {static} _assigned_variables(ast.Assign) : list[Attribute]
+  # {static} _variables_bound_by(ast.stmt) : list[Attribute]
+  + {static} module_variables(ast.Module) : list[Attribute]
+  # {static} _module_function_member(FunctionNode) : Member
+  + {static} module_members(ast.Module, TypeVocabulary) : list[Member]
+  + {static} has_abstract_method(ast.ClassDef) : bool
+}
+class modules <<module>> {
+  + {static} PACKAGE_SEPARATOR
+  + {static} package_of(Path) : str | None
+  # {static} _absolute_module(ast.ImportFrom, str | None) : str | None
+  # {static} _module_and_parent(str) : set[str]
+  # {static} _imported_paths(ast.AST, str | None) : set[str]
+  + {static} import_hints(ast.Module, str | None) : ResolutionHints
+}
+class _UnquoteForwardReferences {
+  + visit_Constant(ast.Constant) : ast.AST
+  + visit_Subscript(ast.Subscript) : ast.AST
+}
+class syntax <<module>> {
+  + {static} DUNDER
+  + {static} PROTECTED_PREFIX
+  + {static} LITERAL
+  + {static} ANNOTATED
+  + {static} FunctionNode
+  # {static} _NESTED_SCOPES
+  # {static} _parsed_type_expression(str) : ast.expr | None
+  + {static} type_text(ast.expr) : str
+  + {static} simple_name(ast.expr) : str | None
+  + {static} decorator_names(FunctionNode | ast.ClassDef) : set[str]
+  + {static} visibility_of(str) : Visibility
+  + {static} functions_of(ast.ClassDef) : Iterator[FunctionNode]
+  + {static} walk_own_scope(FunctionNode) : Iterator[ast.AST]
+  + {static} looks_like_class_name(str) : bool
+  + {static} constructor_called(ast.AST | None) : str | None
+}
+class usages <<module>> {
+  + {static} field_usages(ast.ClassDef) : list[FieldUsage]
+  # {static} _signature_types(Iterable[FunctionNode], bool) : list[str]
+  + {static} signature_types(ast.ClassDef) : list[str]
+  + {static} module_signature_types(ast.Module) : list[str]
+  # {static} _mentioned_type(ast.AST) : str | None
+  # {static} _mentioned_in(Iterable[ast.AST]) : list[str]
+  + {static} body_types(ast.ClassDef) : list[str]
+  + {static} module_body_types(ast.Module) : list[str]
+  + {static} newed_types(ast.ClassDef) : list[str]
+}
+class vocabulary <<module>> {
+  + {static} PRIMITIVES
+  + {static} COLLECTION_WRAPPERS
+  + {static} PYTHON_VOCABULARY : TypeVocabulary
+  + {static} DATACLASS_STYLE : StereotypeStyle
+  + {static} SKINPARAM_LINES
+}
+}
+namespace docgen.languages.unity {
+class UnityRelationPolicy {
+  + scriptable_objects : str[*]
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class UnityLanguage {
+  + {static} name
+  + {static} skinparam_lines
+  + {static} vocabulary : TypeVocabulary
+  + {static} hidden_bases
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} SCRIPTABLE_OBJECT
+  + {static} AGGREGATES
+  + {static} UNITY_BASES
+  + {static} UNITY_PRIMITIVES
+  + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
+  + {static} SCRIPTABLE_OBJECT_STEREOTYPE
+  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+}
+}
+
+docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
+docgen.core.Language *--> docgen.core.TypeVocabulary
+docgen.core.Member *--> docgen.core.MemberKind
+docgen.core.Member *--> docgen.core.Visibility
+docgen.core.TypeDecl *--> "0..*" docgen.core.FieldUsage
+docgen.core.TypeDecl *--> "0..*" docgen.core.Member
+docgen.core.TypeDecl *--> docgen.core.TypeKind
+docgen.core.ParsedFile *--> docgen.core.ResolutionHints
+docgen.core.ParsedFile *--> "0..*" docgen.core.TypeDecl
+docgen.core._PackageIndex *--> docgen.core.FileDiagram
+docgen.core.Relation *--> docgen.core.RelationLevel
+docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.core.Language
+docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.python.PythonLanguage --|> docgen.core.Language
+docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
+docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
+
+@enduml

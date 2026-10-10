@@ -1,0 +1,16 @@
+class generate_mcd <<module>> {
+  # {static} _TYPE_MAP
+  # {static} _SKIP_KEYWORDS
+  # {static} _SKINPARAM
+  # {static} _strip_comments(str) : str
+  + {static} parse_schema(str) : list[dict]
+  # {static} _parse_table(str, str) : dict
+  # {static} _mcd_type(str) : str
+  # {static} _detect_subtype(dict, dict) : str | None
+  + {static} classify_tables(list[dict]) : tuple
+  # {static} _fk_card(dict, list[str]) : str
+  # {static} _entity_fk_rels(dict, dict) : list[tuple[str, str, str]]
+  # {static} _junction_endpoints(dict) : list[str]
+  + {static} render_mcd(list[dict]) : str
+  + {static} main()
+}

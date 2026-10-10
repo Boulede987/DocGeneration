@@ -1,0 +1,12 @@
+namespace docgen.core {
+class render <<module>> {
+  + {static} STATIC_FLAG
+  + {static} ABSTRACT_FLAG
+  + {static} ENUM_STEREOTYPE
+  + {static} INTERFACE_STEREOTYPE
+  + {static} MEMBER_INDENT
+  # {static} _render_member(Member) : str
+  # {static} _header(TypeDecl, str | None) : str
+  + {static} render_declaration(TypeDecl, str | None) : list[str]
+}
+}

@@ -1,0 +1,20 @@
+namespace docgen.core {
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+class vocabulary <<module>> {
+  + {static} TYPE_PARAMETERS_END
+  # {static} _TYPE_TEXT_SEPARATORS
+  # {static} _TYPE_NAME
+  # {static} _ARRAY_SUFFIX
+  # {static} _UML_MANY_SUFFIX
+  # {static} _NULLABLE_MARK
+}
+}

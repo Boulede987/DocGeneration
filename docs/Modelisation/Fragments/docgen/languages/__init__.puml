@@ -1,0 +1,5 @@
+namespace docgen.languages {
+class languages <<module>> {
+  + {static} REGISTRY : dict[str, Language]
+}
+}

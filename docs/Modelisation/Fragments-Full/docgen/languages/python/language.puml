@@ -1,0 +1,25 @@
+namespace docgen.languages.python {
+class PythonLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + {static} hidden_bases
+  + parse_file(SourceText) : ParsedFile
+  + class_stereotype(TypeDecl) : str | None
+}
+class language <<module>> {
+  + {static} DATACLASS_STEREOTYPE
+  + {static} PACKAGE_MODULE_STEM
+  + {static} MODULE_BOX_SUFFIX
+  + {static} HIDDEN_BASES
+  # {static} _module_name(SourceText, set[str]) : str
+}
+}
+
+docgen.languages.python.PythonLanguage --|> docgen.core.Language
+docgen.languages.python.PythonLanguage ..> docgen.core.ParsedFile
+docgen.languages.python.PythonLanguage ..> docgen.core.SourceText
+docgen.languages.python.PythonLanguage ..> docgen.core.TypeDecl
+docgen.languages.python.language ..> docgen.core.SourceText

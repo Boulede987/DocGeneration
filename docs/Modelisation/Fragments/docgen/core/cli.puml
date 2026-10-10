@@ -1,0 +1,22 @@
+namespace docgen.core {
+class CommandLine <<dataclass>> {
+  + src_dirs : tuple[Path, ...]
+  + output_base : Path
+  + excludes : tuple[str, ...]
+}
+class cli <<module>> {
+  + {static} DEFAULT_OUT_DIR
+  + {static} LEGACY_PATH_COUNT
+  + {static} EXIT_OK
+  + {static} EXIT_ERRORS
+  + {static} CONSOLE_ENCODING
+  # {static} _exclude_pattern(str) : str
+  # {static} _parser(Language) : argparse.ArgumentParser
+  # {static} _has_sources(Path, str) : bool
+  # {static} _split_legacy_out(list[Path], Language) : tuple[list[Path], Path | None]
+  + {static} parse_command_line(Language, list[str], bool) : CommandLine
+  # {static} _use_utf8_console()
+  # {static} _print_summary(RunSummary, Path, str)
+  + {static} main(Language, list[str] | None, bool) : int
+}
+}

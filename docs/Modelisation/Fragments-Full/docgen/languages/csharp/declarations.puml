@@ -1,0 +1,29 @@
+namespace docgen.languages.csharp {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + body : str
+}
+class declarations <<module>> {
+  + {static} NAMESPACE_RE
+  + {static} USING_RE
+  + {static} TYPE_DECL
+  # {static} _GENERIC_CONSTRAINTS
+  # {static} _INTERFACE_NAME
+  # {static} _VERBATIM_STRING
+  # {static} _STRING_LITERAL
+  # {static} _CHAR_LITERAL
+  + {static} EMPTY_STRING
+  + {static} EMPTY_CHAR
+  + {static} strip_strings(str) : str
+  + {static} parse_namespace(str) : str | None
+  + {static} parse_usings(str) : set[str]
+  # {static} _supertypes(str) : tuple[str | None, list[str]]
+  + {static} find_type_headers(str) : list[TypeHeader]
+}
+}
+
+docgen.languages.csharp.declarations ..> docgen.languages.csharp.TypeHeader

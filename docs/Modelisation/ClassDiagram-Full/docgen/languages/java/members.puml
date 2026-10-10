@@ -1,0 +1,89 @@
+@startuml members
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.java {
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+class members <<module>> {
+  + {static} MODIFIERS_PATTERN
+  + {static} NESTED_TYPE
+  + {static} ANNOTATIONS
+  + {static} METHOD_RE
+  + {static} FIELD_RE
+  # {static} _INTERFACE_METHOD
+  # {static} _INTERFACE_CONSTANT
+  # {static} _INTERFACE_MODIFIERS
+  # {static} _DEFAULT_METHOD_BODY
+  # {static} _FINAL_PARAMETER
+  # {static} _ENUM_ANNOTATION
+  # {static} _ENUM_CONSTRUCTOR_ARGUMENTS
+  # {static} _ENUM_CONSTANT_BODY
+  # {static} _IDENTIFIER
+  # {static} _VISIBILITY_RULES
+  # {static} _VOID
+  # {static} _VARARGS
+  # {static} _ARRAY
+  # {static} _PUBLIC
+  # {static} _STATIC
+  # {static} _ABSTRACT
+  # {static} _CALL_OPEN
+  # {static} _param_types(str) : list[str]
+  # {static} _statements(str) : list[str]
+  # {static} _typed_member(MemberKind, str, str, str | None, list[str]) : Member
+  # {static} _method(re.Match[str]) : Member
+  # {static} _parse_member(str, str, TypeVocabulary) : Member | None
+  + {static} class_members(str, str, TypeVocabulary) : list[Member]
+  + {static} record_components(str | None) : list[tuple[str, str]]
+  + {static} component_members(str | None, TypeVocabulary) : list[Member]
+  # {static} _interface_member(str) : Member | None
+  + {static} interface_members(str) : list[Member]
+  + {static} enum_values(str) : list[str]
+  # {static} _add_member_types(str, str, MemberTypes)
+  + {static} member_types(str, str) : MemberTypes
+  + {static} body_types(str) : list[str]
+  + {static} newed_types(str) : list[str]
+}
+}
+
+docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.java.members ..> docgen.core.FieldUsage
+docgen.languages.java.members ..> docgen.core.Member
+docgen.languages.java.members ..> docgen.core.MemberKind
+docgen.languages.java.members ..> docgen.languages.java.MemberTypes
+docgen.languages.java.members ..> docgen.core.TypeVocabulary
+docgen.languages.java.members ..> docgen.core.Visibility
+
+@enduml

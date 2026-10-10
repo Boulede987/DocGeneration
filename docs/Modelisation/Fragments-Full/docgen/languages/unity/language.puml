@@ -1,0 +1,34 @@
+namespace docgen.languages.unity {
+class UnityRelationPolicy {
+  + scriptable_objects : str[*]
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class UnityLanguage {
+  + {static} name
+  + {static} skinparam_lines
+  + {static} vocabulary : TypeVocabulary
+  + {static} hidden_bases
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} SCRIPTABLE_OBJECT
+  + {static} AGGREGATES
+  + {static} UNITY_BASES
+  + {static} UNITY_PRIMITIVES
+  + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
+  + {static} SCRIPTABLE_OBJECT_STEREOTYPE
+  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+}
+}
+
+docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.FieldFacts
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.RelationLevel
+docgen.languages.unity.UnityLanguage ..> docgen.core.ParsedFile
+docgen.languages.unity.UnityLanguage ..> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage ..> docgen.core.TypeDecl
+docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
+docgen.languages.unity.language ..> docgen.core.ParsedFile
+docgen.languages.unity.language ..> docgen.core.StereotypeStyle

@@ -1,0 +1,54 @@
+namespace docgen.languages.csharp {
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+class members <<module>> {
+  + {static} MODIFIERS_PATTERN
+  + {static} NESTED_TYPE
+  + {static} PROPERTY_INNER
+  + {static} ATTRIBUTES
+  + {static} PROP_RE
+  + {static} METHOD_RE
+  + {static} FIELD_RE
+  # {static} _INTERFACE_METHOD
+  # {static} _INTERFACE_PROPERTY
+  # {static} _INTERFACE_DECLARATION_NOISE
+  # {static} _PARAMETER_MODIFIER
+  # {static} _ENUM_ATTRIBUTE
+  # {static} _ENUM_VALUE_ASSIGNMENT
+  # {static} _ENUM_SEPARATORS
+  # {static} _IDENTIFIER
+  # {static} _VISIBILITY_RULES
+  # {static} _NO_RETURN_TYPES
+  # {static} _SERIALIZED_ATTRIBUTE
+  # {static} _PROPERTY_MARK
+  # {static} _PUBLIC
+  # {static} _ABSTRACT
+  # {static} _STATIC_KEYWORDS
+  # {static} _CALL_OPEN
+  # {static} _KIND_ORDER
+  # {static} _param_types(str) : list[str]
+  # {static} _statements(str) : list[str]
+  # {static} _typed_member(MemberKind, re.Match[str], str | None) : Member
+  # {static} _parse_member(str, str, TypeVocabulary) : Member | None
+  + {static} class_members(str, str, TypeVocabulary) : list[Member]
+  # {static} _interface_member(str) : Member | None
+  + {static} interface_members(str) : list[Member]
+  + {static} enum_values(str) : list[str]
+  # {static} _field_usage(str, re.Match[str]) : FieldUsage
+  # {static} _add_member_types(str, str, MemberTypes)
+  + {static} member_types(str, str) : MemberTypes
+  # {static} _method_bodies(str) : Iterator[str]
+  + {static} body_types(str) : list[str]
+  + {static} newed_types(str) : list[str]
+}
+}
+
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.csharp.members ..> docgen.core.FieldUsage
+docgen.languages.csharp.members ..> docgen.core.Member
+docgen.languages.csharp.members ..> docgen.core.MemberKind
+docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
+docgen.languages.csharp.members ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.members ..> docgen.core.Visibility

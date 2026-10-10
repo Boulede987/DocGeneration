@@ -1,0 +1,77 @@
+@startuml relations
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.core {
+enum RelationLevel <<enum>> {
+  INHERITANCE
+  STRONG
+  WEAK
+}
+class Relation <<dataclass>> {
+  + source : str
+  + arrow : str
+  + target : str
+  + level : RelationLevel
+  + multiplicity : str | None
+  + render(str, str) : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class relations <<module>> {
+  + {static} INHERITS
+  + {static} REALIZES
+  + {static} COMPOSES
+  + {static} ASSOCIATES
+  + {static} DEPENDS
+  + {static} MANY
+  # {static} _superclasses(TypeDecl) : list[str]
+  + {static} inherited_names(TypeDecl) : set[str]
+  + {static} inheritance_relations(TypeDecl, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeDecl, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeDecl, set[str], set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+}
+}
+
+docgen.core.Relation *--> docgen.core.RelationLevel
+
+@enduml

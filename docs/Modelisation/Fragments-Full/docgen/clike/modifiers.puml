@@ -1,0 +1,9 @@
+namespace docgen.clike {
+class modifiers <<module>> {
+  + {static} VisibilityRules
+  + {static} visibility_from(str, VisibilityRules) : Visibility
+  + {static} has_modifier(str, *str) : bool
+}
+}
+
+docgen.clike.modifiers ..> docgen.core.Visibility

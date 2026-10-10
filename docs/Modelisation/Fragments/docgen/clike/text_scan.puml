@@ -1,0 +1,22 @@
+namespace docgen.clike {
+class text_scan <<module>> {
+  # {static} _BLOCK_COMMENT
+  # {static} _LINE_COMMENT
+  + {static} BLOCK_OPEN
+  + {static} BLOCK_CLOSE
+  + {static} STATEMENT_END
+  + {static} LIST_SEPARATOR
+  # {static} _ANY_OPENING_BRACKET
+  # {static} _ANY_CLOSING_BRACKET
+  # {static} _TYPE_ARGUMENT_OPENING
+  # {static} _TYPE_ARGUMENT_CLOSING
+  + {static} PROPERTY_PLACEHOLDER
+  + {static} BODY_PLACEHOLDER
+  + {static} strip_c_comments(str) : str
+  + {static} close_brace(str, int) : int
+  + {static} split_top_level(str, str) : tuple[str, str]
+  + {static} split_by_comma(str) : list[str]
+  # {static} _braced_statement(str, str, re.Pattern[str], re.Pattern[str] | None) : str | None
+  + {static} flatten(str, re.Pattern[str], re.Pattern[str] | None) : list[str]
+}
+}

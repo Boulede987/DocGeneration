@@ -1,0 +1,62 @@
+@startuml language
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.core {
+abstract class Language <<abstract>> {
+  + name : str
+  + source_suffix : str
+  + views_dir : str
+  + skinparam_lines : str[*]
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + {abstract} parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+class language <<module>> {
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  # {static} _KIND_STEREOTYPES
+}
+}
+
+docgen.core.Language *--> docgen.core.TypeVocabulary
+docgen.core.Language ..> docgen.core.ParsedFile
+docgen.core.Language ..> docgen.core.RelationPolicy
+docgen.core.Language ..> docgen.core.SourceText
+docgen.core.Language ..> docgen.core.TypeDecl
+docgen.core.language ..> docgen.core.TypeKind
+
+@enduml
