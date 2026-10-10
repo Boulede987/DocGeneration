@@ -3,7 +3,9 @@ roots, parse each once, index the project's types, write per-file diagrams,
 then the package views."""
 
 from dataclasses import dataclass, field
+from fnmatch import fnmatchcase
 from pathlib import Path
+from typing import Sequence
 
 from .file_diagram import FileDiagram, FileOutputPaths, write_file_outputs
 from .language import Language
@@ -28,12 +30,31 @@ class RunSummary:
     skipped: list[Path] = field(default_factory=list)
     errors: dict[Path, str] = field(default_factory=dict)
     package_count: int = 0
+    excluded: int = 0
 
     def record_error(self, source: SourceFile, error: Exception) -> None:
         self.errors[source.relative_path] = f"{type(error).__name__}: {error}"
 
 
-def discover_sources(src_roots: list[Path], suffix: str) -> list[SourceFile]:
+CURRENT_FOLDER_PREFIX = "./"
+
+
+def normalized_pattern(pattern: str) -> str:
+    """Patterns are written against '/'-separated paths: 'tests\\*' and
+    './tests/*' mean 'tests/*'."""
+    pattern = pattern.replace("\\", "/")
+    return pattern[len(CURRENT_FOLDER_PREFIX):] if pattern.startswith(CURRENT_FOLDER_PREFIX) else pattern
+
+
+def _is_excluded(source: SourceFile, excludes: Sequence[str]) -> bool:
+    """Case-sensitive on every platform, so a pattern means the same thing
+    on Windows and Linux. '*' also crosses folders: 'tests/*' excludes
+    everything under tests. Patterns match files, not folders."""
+    text = source.relative_path.as_posix()
+    return any(fnmatchcase(text, normalized_pattern(pattern)) for pattern in excludes)
+
+
+def discover_sources(src_roots: Sequence[Path], suffix: str) -> list[SourceFile]:
     """Every file with the suffix under the roots, sorted by path. A file
     under nested roots is relative to the most specific one."""
     root_of: dict[Path, Path] = {}
@@ -113,9 +134,12 @@ def _parse_sources(language: Language, sources: list[SourceFile], summary: RunSu
     return parsed_files
 
 
-def run(language: Language, src_roots: list[Path], output_base: Path) -> RunSummary:
+def run(language: Language, src_roots: Sequence[Path], output_base: Path, excludes: Sequence[str] = ()) -> RunSummary:
     summary = RunSummary()
-    parsed_files = _parse_sources(language, discover_sources(src_roots, language.source_suffix), summary)
+    discovered = discover_sources(src_roots, language.source_suffix)
+    sources = [source for source in discovered if not _is_excluded(source, excludes)]
+    summary.excluded = len(discovered) - len(sources)
+    parsed_files = _parse_sources(language, sources, summary)
     index = ProjectIndex(list(parsed_files.values()))
     policy = language.relation_policy(list(parsed_files.values()))
 

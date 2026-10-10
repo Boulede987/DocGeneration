@@ -20,8 +20,16 @@ CONSOLE_ENCODING = "utf-8"
 
 @dataclass(frozen=True)
 class CommandLine:
-    src_dirs: list[Path]
+    src_dirs: tuple[Path, ...]
     output_base: Path
+    excludes: tuple[str, ...]
+
+
+def _exclude_pattern(text: str) -> str:
+    """A blank pattern would silently exclude nothing."""
+    if not text.strip():
+        raise argparse.ArgumentTypeError("--exclude needs a non-blank glob pattern")
+    return text
 
 
 def _parser(language: Language) -> argparse.ArgumentParser:
@@ -36,6 +44,11 @@ def _parser(language: Language) -> argparse.ArgumentParser:
     parser.add_argument(
         "-o", "--out", type=Path, default=None,
         help=f"output root (default: <first src_dir>/{DEFAULT_OUT_DIR})",
+    )
+    parser.add_argument(
+        "--exclude", action="append", default=[], metavar="GLOB", type=_exclude_pattern,
+        help="skip source files whose path relative to their src_dir matches GLOB "
+             "(repeatable; e.g. --exclude 'tests/*')",
     )
     return parser
 
@@ -64,7 +77,9 @@ def parse_command_line(language: Language, argv: list[str], legacy_out_positiona
     missing = [str(path) for path in src_dirs if not path.is_dir()]
     if missing:
         parser.error(f"source directory not found: {', '.join(missing)}")
-    return CommandLine(src_dirs, output_base if output_base is not None else src_dirs[0] / DEFAULT_OUT_DIR)
+    resolved_output_base = output_base if output_base is not None else src_dirs[0] / DEFAULT_OUT_DIR
+    excludes: list[str] = arguments.exclude
+    return CommandLine(tuple(src_dirs), resolved_output_base, tuple(excludes))
 
 
 def _use_utf8_console() -> None:
@@ -79,7 +94,8 @@ def _print_summary(summary: RunSummary, output_base: Path, views_dir: str) -> No
         print(f"  SKIP   {relative_path}  (no type declarations)")
     for relative_path, message in summary.errors.items():
         print(f"  ERROR  {relative_path}  — {message}")
-    print(f"\nDone: {summary.generated} generated, {len(summary.skipped)} skipped, {len(summary.errors)} errors.")
+    print(f"\nDone: {summary.generated} generated, {len(summary.skipped)} skipped, "
+          f"{summary.excluded} excluded, {len(summary.errors)} errors.")
     print(f"Wrote {summary.package_count} package diagrams + overview + project views "
           f"to {output_base / views_dir}(-Full)")
 
@@ -88,7 +104,8 @@ def main(language: Language, argv: list[str] | None = None, legacy_out_positiona
     """Returns the process exit code: non-zero when any file failed."""
     _use_utf8_console()
     command_line = parse_command_line(language, sys.argv[1:] if argv is None else argv, legacy_out_positional)
-    print(f"Reading {language.source_suffix} files under {', '.join(map(str, command_line.src_dirs))}")
-    summary = run(language, command_line.src_dirs, command_line.output_base)
+    excluding = f" (excluding {', '.join(command_line.excludes)})" if command_line.excludes else ""
+    print(f"Reading {language.source_suffix} files under {', '.join(map(str, command_line.src_dirs))}{excluding}")
+    summary = run(language, command_line.src_dirs, command_line.output_base, command_line.excludes)
     _print_summary(summary, command_line.output_base, language.views_dir)
     return EXIT_ERRORS if summary.errors else EXIT_OK

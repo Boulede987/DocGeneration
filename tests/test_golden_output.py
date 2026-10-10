@@ -86,3 +86,42 @@ def test_missing_source_root_is_a_usage_error(tmp_path: Path, script: str):
     assert result.returncode == EXIT_USAGE_ERROR
     assert "source directory not found" in result.stderr
     assert not (tmp_path / "out").exists()
+
+
+def test_excluded_paths_are_not_read(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path,
+                        "--exclude", "shop/service/*", cwd=tmp_path)
+
+    # broken.py lives in shop/service: excluding it removes the only error.
+    assert result.returncode == 0, result.stdout
+    assert not (tmp_path / FULL_DIAGRAM_DIR / "shop" / "service").exists()
+    assert (tmp_path / FULL_DIAGRAM_DIR / "shop" / "model" / "product.puml").is_file()
+
+
+def test_exclude_matching_is_case_sensitive_on_every_platform(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path,
+                        "--exclude", "SHOP/service/*", cwd=tmp_path)
+
+    # 'SHOP' doesn't match 'shop': broken.py is still read and reported.
+    assert result.returncode == EXIT_FILE_ERRORS
+
+
+def test_windows_and_dot_slash_exclude_patterns_are_normalized(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path,
+                        "--exclude", "./shop\\service\\*", cwd=tmp_path)
+
+    assert result.returncode == 0, result.stdout
+
+
+def test_excluded_files_are_counted_in_the_summary(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path,
+                        "--exclude", "shop/service/*", cwd=tmp_path)
+
+    assert "2 excluded" in result.stdout
+
+
+def test_blank_exclude_pattern_is_a_usage_error(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path, "--exclude", " ", cwd=tmp_path)
+
+    assert result.returncode == EXIT_USAGE_ERROR
+    assert "--exclude" in result.stderr
