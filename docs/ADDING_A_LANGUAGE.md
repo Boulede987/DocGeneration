@@ -16,10 +16,12 @@ diagrams, package views, and the command line.
    | `source_suffix` | `".java"` |
    | `views_dir` | `"Packages"` — folder for package-level views |
    | `skinparam_lines` | `skinparam_lines([StereotypeStyle("record", ...)])` from `docgen.core.style` |
-   | `vocabulary` | `TypeVocabulary(primitives=..., collection_wrappers=...)` |
+   | `vocabulary` | `TypeVocabulary(primitives=..., collection_wrappers=...)`; set `type_argument_brackets=("[", "]")` if the language writes `list[Foo]` |
    | `hidden_bases` (optional) | base classes never drawn, e.g. Unity's `MonoBehaviour` |
 
-   and implementing `parse_file(stem, source) -> ParsedFile`.
+   and implementing `parse_file(source: SourceText) -> ParsedFile`.
+   `SourceText` gives the file's text, its path relative to the source
+   root it was found under, and its stem.
 
 2. **Export it** from `docgen/languages/<lang>/__init__.py`.
 
@@ -49,12 +51,15 @@ A `ParsedFile` with:
 
 - `package` — the file's grouping unit (package, namespace, module path), or
   `None`. It becomes the PlantUML namespace, so its segments must be
-  separated by `.`.
+  separated by `.`. It may come from the text (Java `package`, C#
+  `namespace`) or from `source.relative_path` (Python folders).
 - `decls` — one `TypeDecl` per declared type (empty when the file declares
   none; the file is then skipped). Per kind:
   - all kinds: `name` (may include type parameters, e.g. `Box<T>`), `kind`,
     `modifiers` (words like `abstract`, `static`), `base_class`,
-    `interfaces` — type texts as written.
+    `additional_bases` (further superclasses, for multiple inheritance),
+    `interfaces` — type texts as written; a base must be a simple name
+    (strip a module prefix or type arguments yourself).
   - `ENUM`: `enum_values`.
   - `INTERFACE`: `members`.
   - class-like kinds (`CLASS`, `RECORD`, `STRUCT`): `members` in display
@@ -69,7 +74,11 @@ A `ParsedFile` with:
 
 `Member.type` is display text: format collection types with
 `vocabulary.uml_type()` where the language wants `Foo[*]` instead of
-`List<Foo>`; use `None` for a method shown without a return type.
+`List<Foo>`; use `None` for a method shown without a return type, or a
+field whose type is unknown.
+
+Raise when a file can't be parsed (e.g. a syntax error): the pipeline
+reports that file, generates every other one, and exits with code 1.
 
 ## Optional hooks
 
@@ -93,4 +102,6 @@ stripping, brace matching, depth-aware splitting, flattening a type body
 into member statements, and scanning method bodies for used types. Use them
 for any C-like language; a language with other syntax doesn't need them.
 
-`tests/toy_language.py` is a complete minimal language in about 50 lines.
+`tests/toy_language.py` is a complete minimal language in about 50 lines;
+`docgen/languages/python/` is a full one built on Python's `ast` module
+instead of the brace-language helpers.

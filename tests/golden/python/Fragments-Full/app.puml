@@ -1,0 +1,6 @@
+class App {
+  # _service : OrderService
+  + run()
+}
+
+App --> shop.service.OrderService

@@ -1,0 +1,35 @@
+namespace shop.service {
+interface Repository <<interface>> {
+  + find(str) : Optional[Product]
+  + save(Product)
+}
+class Auditable {
+  + audit() : list[str]
+}
+class BaseService {
+  + {static} name
+}
+class OrderService {
+  + repository : Repository
+  - __orders : dict[str, Order]
+  + gateway : PaymentGateway
+  + history
+  + {static} total(list[Product]) : Money
+  + {static} create(Repository) : OrderService
+  # _check(Product) : bool
+}
+class Order {
+  + product : Product
+  + validate()
+}
+}
+
+shop.service.OrderService --|> shop.service.BaseService
+shop.service.OrderService --|> shop.service.Auditable
+shop.service.Order --|> shop.model.Entity
+shop.service.OrderService *--> shop.service.Repository
+shop.service.Order *--> shop.model.Product
+shop.service.OrderService --> shop.service.Order
+shop.service.OrderService ..> shop.model.Money
+shop.service.OrderService ..> shop.model.Product
+shop.service.OrderService ..> shop.util.Validator

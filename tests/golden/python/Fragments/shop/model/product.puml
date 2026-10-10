@@ -1,0 +1,28 @@
+namespace shop.model {
+enum Category <<enum>> {
+  BOOKS
+  GAMES
+  MUSIC
+}
+class Money <<dataclass>> {
+  + cents : int
+  + currency : str
+  + plus(Money) : Money
+}
+class Tag {
+  + label : str
+  + {static} MAX_LENGTH
+}
+class Product <<dataclass>> {
+  + name : str
+  + price : Money
+  + tags : Tag[*]
+  + category : Category | None
+  + validate()
+}
+}
+
+shop.model.Product --|> shop.model.Entity
+shop.model.Product *--> shop.model.Category
+shop.model.Product *--> shop.model.Money
+shop.model.Product *--> "0..*" shop.model.Tag

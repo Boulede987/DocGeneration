@@ -1,0 +1,9 @@
+namespace shop.util {
+class Box {
+  + item : T
+  + get() : T
+}
+class Validator {
+  + {static} check(object) : bool
+}
+}

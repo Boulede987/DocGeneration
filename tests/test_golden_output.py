@@ -10,12 +10,14 @@ from conftest import FIXTURES, GOLDEN, assert_same_tree, run_script
 JAVA_SCRIPT = "generate_class_diagramm_java.py"
 CSHARP_SCRIPT = "generate_class_diagramm.py"
 UNITY_SCRIPT = "generate_class_diagramm_unity.py"
+PYTHON_SCRIPT = "generate_class_diagramm_python.py"
 OUT_OPTION = "-o"
 JAVA_SOURCE_ROOT = FIXTURES / "java" / "src"
 JAVA_LIBRARY_ROOT = FIXTURES / "java" / "lib"
 DEFAULT_OUTPUT_DIR = "Modelisation"
 BASE_DIAGRAM_DIR = "ClassDiagram"
 FULL_DIAGRAM_DIR = "ClassDiagram-Full"
+EXIT_FILE_ERRORS = 1
 EXIT_USAGE_ERROR = 2
 
 
@@ -24,6 +26,14 @@ def test_java_two_roots_with_out_option_match_golden(tmp_path: Path):
 
     assert result.returncode == 0, result.stderr
     assert_same_tree(tmp_path, GOLDEN / "java")
+
+
+def test_python_output_matches_golden(tmp_path: Path):
+    result = run_script(PYTHON_SCRIPT, FIXTURES / "python", OUT_OPTION, tmp_path, cwd=tmp_path)
+
+    # The fixture holds one file with a deliberate syntax error.
+    assert result.returncode == EXIT_FILE_ERRORS, result.stderr
+    assert_same_tree(tmp_path, GOLDEN / "python")
 
 
 @pytest.mark.parametrize("script, language", [(CSHARP_SCRIPT, "csharp"), (UNITY_SCRIPT, "unity")])

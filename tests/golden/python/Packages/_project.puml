@@ -1,0 +1,109 @@
+@startuml _project
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+class App {
+  # _service : OrderService
+  + run()
+}
+namespace shop.model {
+abstract class Entity <<abstract>> {
+  + id : int
+  # _version
+  + key : str
+  + {abstract} validate()
+}
+enum Category <<enum>> {
+  BOOKS
+  GAMES
+  MUSIC
+}
+class Money <<dataclass>> {
+  + cents : int
+  + currency : str
+  + plus(Money) : Money
+}
+class Tag {
+  + label : str
+  + {static} MAX_LENGTH
+}
+class Product <<dataclass>> {
+  + name : str
+  + price : Money
+  + tags : Tag[*]
+  + category : Category | None
+  + validate()
+}
+}
+namespace shop.service {
+interface Repository <<interface>> {
+  + find(str) : Optional[Product]
+  + save(Product)
+}
+class Auditable {
+  + audit() : list[str]
+}
+class BaseService {
+  + {static} name
+}
+class OrderService {
+  + repository : Repository
+  - __orders : dict[str, Order]
+  + gateway : PaymentGateway
+  + history
+  + {static} total(list[Product]) : Money
+  + {static} create(Repository) : OrderService
+  # _check(Product) : bool
+}
+class Order {
+  + product : Product
+  + validate()
+}
+}
+namespace shop.util {
+class Box {
+  + item : T
+  + get() : T
+}
+class Validator {
+  + {static} check(object) : bool
+}
+}
+
+shop.model.Product --|> shop.model.Entity
+shop.model.Product *--> shop.model.Category
+shop.model.Product *--> shop.model.Money
+shop.model.Product *--> "0..*" shop.model.Tag
+shop.service.OrderService --|> shop.service.BaseService
+shop.service.OrderService --|> shop.service.Auditable
+shop.service.Order --|> shop.model.Entity
+shop.service.OrderService *--> shop.service.Repository
+shop.service.Order *--> shop.model.Product
+
+@enduml

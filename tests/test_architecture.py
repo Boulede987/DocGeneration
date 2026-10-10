@@ -12,7 +12,10 @@ from conftest import REPO_ROOT, run_script
 
 MAX_MODULE_LINES = 300
 OUT_OF_SCOPE = {"generate_mcd.py", "generate_mld.py"}
-ENTRY_SCRIPTS = ["generate_class_diagramm_java.py", "generate_class_diagramm.py", "generate_class_diagramm_unity.py"]
+ENTRY_SCRIPTS = [
+    "generate_class_diagramm_java.py", "generate_class_diagramm.py",
+    "generate_class_diagramm_unity.py", "generate_class_diagramm_python.py",
+]
 PRIVATE_PREFIX = "_"
 TOY_SOURCE = "package zoo\nclass Dog extends Animal\n  field owner: Person\nclass Person\n"
 TOY_VIEWS_DIR = "Modules"
@@ -66,10 +69,10 @@ def _toy_full_diagram(toy_output: Path) -> str:
     return (toy_output / FULL_DIAGRAM_DIR / "dog.puml").read_text(encoding="utf-8")
 
 
-def test_registry_provides_java_csharp_and_unity():
+def test_registry_provides_every_supported_language():
     from docgen.languages import REGISTRY
 
-    assert {"java", "csharp", "unity"} <= set(REGISTRY)
+    assert {"java", "csharp", "unity", "python"} <= set(REGISTRY)
 
 
 def test_every_registered_language_implements_the_language_interface():

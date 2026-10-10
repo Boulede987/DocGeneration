@@ -1,0 +1,8 @@
+namespace shop.model {
+abstract class Entity <<abstract>> {
+  + id : int
+  # _version
+  + key : str
+  + {abstract} validate()
+}
+}
