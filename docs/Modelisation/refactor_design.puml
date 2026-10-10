@@ -1,255 +1,333 @@
 @startuml refactor_design
-' As-built architecture of the class diagram generators (2026-10-10).
-' Written by hand from the code: DocGeneration has no Python generator.
+
 skinparam classAttributeIconSize 0
 skinparam shadowing false
-skinparam packageStyle rectangle
 
-package "entry scripts" {
-  class generate_class_diagramm_java <<script>> {
-    main(REGISTRY["java"])
-  }
-  class generate_class_diagramm <<script>> {
-    main(REGISTRY["csharp"], legacy_out_positional=True)
-  }
-  class generate_class_diagramm_unity <<script>> {
-    main(REGISTRY["unity"], legacy_out_positional=True)
-  }
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
 }
 
-package "docgen.core" {
-  class cli <<module>> {
-    + main(language, argv, legacy_out_positional) : int
-    + parse_command_line(...) : CommandLine
-  }
-  class CommandLine <<dataclass>> {
-    src_dirs : list[Path]
-    output_base : Path
-  }
-  class pipeline <<module>> {
-    + run(language, src_roots, output_base) : RunSummary
-    + discover_sources(roots, suffix) : list[SourceFile]
-    + build_file_diagram(parsed, index, language, policy) : FileDiagram
-  }
-  class RunSummary <<dataclass>> {
-    generated : int
-    skipped : list[Path]
-    errors : dict[Path, str]
-    package_count : int
-  }
-  abstract class Language {
-    + name : str
-    + source_suffix : str
-    + views_dir : str
-    + skinparam_lines : list[str]
-    + vocabulary : TypeVocabulary
-    + hidden_bases : frozenset[str]
-    + {abstract} parse_file(stem, source) : ParsedFile
-    + enclosing_packages(package) : list[str|None]
-    + class_stereotype(declaration) : str|None
-    + relation_policy(parsed_files) : RelationPolicy
-  }
-  class TypeVocabulary <<dataclass>> {
-    primitives : frozenset[str]
-    collection_wrappers : frozenset[str]
-    + is_collection(type_text) : bool
-    + uml_type(type_text) : str
-    + type_names(type_text) : set[str]
-  }
-  class ParsedFile <<dataclass>> {
-    stem : str
-    package : str | None
-    declarations : list[TypeDecl]
-    hints : ResolutionHints
-  }
-  class ResolutionHints <<dataclass>> {
-    type_imports : dict[str, str]
-    namespace_imports : set[str]
-  }
-  class TypeDecl <<dataclass>> {
-    name : str
-    kind : TypeKind
-    modifiers : frozenset[str]
-    base_class : str | None
-    interfaces : list[str]
-    members : list[Member]
-    enum_values : list[str]
-    field_usages : list[FieldUsage]
-    signature_types : list[str]
-    body_types : list[str]
-    newed_types : list[str]
-  }
-  class Member <<dataclass>> {
-    kind : MemberKind
-    name : str
-    visibility : Visibility
-    is_static : bool
-    is_abstract : bool
-    type : str | None
-    params : list[str]
-  }
-  class FieldUsage <<dataclass>> {
-    type_text : str
-    is_public : bool
-    is_serialized : bool
-  }
-  enum TypeKind {
-    CLASS
-    INTERFACE
-    ENUM
-    RECORD
-    STRUCT
-  }
-  enum Visibility {
-    PUBLIC
-    PRIVATE
-    PROTECTED
-    PACKAGE
-  }
-  enum MemberKind {
-    FIELD
-    PROPERTY
-    METHOD
-  }
-  class relations <<module>> {
-    + inheritance_relations(declaration, hidden_bases) : list[Relation]
-    + usage_relations(declaration, known, inherited, policy, vocabulary) : list[Relation]
-  }
-  class Relation <<dataclass>> {
-    source : str
-    arrow : str
-    target : str
-    level : RelationLevel
-    multiplicity : str | None
-  }
-  enum RelationLevel {
-    INHERITANCE
-    STRONG
-    WEAK
-  }
-  class RelationPolicy {
-    + classify_field(facts) : (arrow, RelationLevel)
-  }
-  class FieldFacts <<dataclass>> {
-    target : str
-    is_collection : bool
-    is_public : bool
-    is_serialized : bool
-    is_newed : bool
-  }
-  class ProjectIndex {
-    + known_types() : set[str]
-    + packages_of(name) : set[str|None]
-  }
-  class resolution <<module>> {
-    + resolve_package(name, parsed, index, enclosing_packages) : str|None
-  }
-  class render <<module>> {
-    + render_declaration(declaration, stereotype) : list[str]
-  }
-  class style <<module>> {
-    + skinparam_lines(kind_styles, extra_styles) : list[str]
-  }
-  class StereotypeStyle <<dataclass>> {
-    stereotype : str | None
-    background : str
-    border : str
-  }
-  class FileDiagram <<dataclass>> {
-    stem : str
-    package : str | None
-    inner_lines : list[str]
-    relations : list[Relation]
-    name_packages : dict[str, str|None]
-    + base_relations() / full_relations()
-    + render_relations(relations) : list[str]
-  }
-  class package_views <<module>> {
-    + generate_package_views(file_diagrams, output_base, views_dir, skinparam) : int
-  }
-  class puml <<module>> {
-    + namespace_block / wrap_document / write_file
-  }
+namespace docgen.core {
+class CommandLine <<dataclass>> {
+  + src_dirs : Path[*]
+  + output_base : Path
+}
+class FileDiagram <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + inner_lines : str[*]
+  + relations : Relation[*]
+  + name_packages : dict[str, str | None]
+  + base_relations() : list[Relation]
+  + full_relations() : list[Relation]
+  + qualified_name(str) : str
+  + render_relations(list[Relation]) : list[str]
+}
+class FileOutputPaths <<dataclass>> {
+  + base : Path
+  + base_fragment : Path
+  + full : Path
+  + full_fragment : Path
+  + {static} under(Path, Path) : FileOutputPaths
+}
+abstract class Language <<abstract>> {
+  + name : str
+  + source_suffix : str
+  + views_dir : str
+  + skinparam_lines : str[*]
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + {abstract} parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
+enum TypeKind <<enum>> {
+  CLASS
+  INTERFACE
+  ENUM
+  RECORD
+  STRUCT
+}
+enum Visibility <<enum>> {
+  PUBLIC
+  PRIVATE
+  PROTECTED
+  PACKAGE
+}
+enum MemberKind <<enum>> {
+  FIELD
+  PROPERTY
+  METHOD
+}
+class Member <<dataclass>> {
+  + kind : MemberKind
+  + name : str
+  + visibility : Visibility
+  + is_static : bool
+  + is_abstract : bool
+  + type : str | None
+  + params : str[*]
+}
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeDecl <<dataclass>> {
+  + name : str
+  + kind : TypeKind
+  + modifiers : str[*]
+  + base_class : str | None
+  + interfaces : str[*]
+  + members : Member[*]
+  + enum_values : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + additional_bases : str[*]
+  + bare_name : str
+  + is_abstract : bool
+  + is_static : bool
+  + has_usages : bool
+}
+class SourceText <<dataclass>> {
+  + relative_path : Path
+  + text : str
+  + stem : str
+}
+class ResolutionHints <<dataclass>> {
+  + type_imports : dict[str, str]
+  + namespace_imports : str[*]
+}
+class ParsedFile <<dataclass>> {
+  + stem : str
+  + package : str | None
+  + declarations : TypeDecl[*]
+  + hints : ResolutionHints
+}
+class _ViewVariant <<dataclass>> {
+  + dir_suffix : str
+  + select_relations : RelationSelector
+}
+class _PackageIndex <<dataclass>> {
+  + files_by_package : dict[str | None, list[FileDiagram]]
+  + file_names : dict[str | None, str]
+  + sorted_packages() : list[str | None]
+  + link(str | None) : str
+}
+class SourceFile <<dataclass>> {
+  + path : Path
+  + relative_path : Path
+}
+class RunSummary <<dataclass>> {
+  + generated : int
+  + skipped : Path[*]
+  + errors : dict[Path, str]
+  + package_count : int
+  + record_error(SourceFile, Exception)
+}
+enum RelationLevel <<enum>> {
+  INHERITANCE
+  STRONG
+  WEAK
+}
+class Relation <<dataclass>> {
+  + source : str
+  + arrow : str
+  + target : str
+  + level : RelationLevel
+  + multiplicity : str | None
+  + render(str, str) : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class ProjectIndex {
+  # _packages_by_name : dict[str, set[str | None]]
+  + known_types() : set[str]
+  + packages_of(str) : set[str | None]
+}
+class StereotypeStyle <<dataclass>> {
+  + stereotype : str | None
+  + background : str
+  + border : str
+  + lines() : list[str]
+}
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+}
+namespace docgen.languages.csharp {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + body : str
+}
+class CSharpLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile
+  + enclosing_packages(str | None) : list[str | None]
+  # _declaration(TypeHeader) : TypeDecl
+  # _fill_class_like(TypeDecl, TypeHeader)
+}
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+}
+namespace docgen.languages.java {
+class TypeHeader <<dataclass>> {
+  + modifiers : str
+  + kind : str
+  + name : str
+  + base_class : str | None
+  + interfaces : str[*]
+  + record_params : str | None
+  + body : str
+}
+class JavaLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile
+  # _declaration(TypeHeader) : TypeDecl
+  # _fill_class_like(TypeDecl, TypeHeader)
+}
+class MemberTypes <<dataclass>> {
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+}
+}
+namespace docgen.languages.python {
+class PythonLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + {static} hidden_bases
+  + parse_file(SourceText) : ParsedFile
+  + class_stereotype(TypeDecl) : str | None
+}
+class Attribute <<dataclass>> {
+  + name : str
+  + type_text : str | None
+  + is_static : bool
+}
+class _UnquoteForwardReferences {
+  + visit_Constant(ast.Constant) : ast.AST
+  + visit_Subscript(ast.Subscript) : ast.AST
+}
+}
+namespace docgen.languages.unity {
+class UnityRelationPolicy {
+  + scriptable_objects : str[*]
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class UnityLanguage {
+  + {static} name
+  + {static} skinparam_lines
+  + {static} vocabulary : TypeVocabulary
+  + {static} hidden_bases
+  + class_stereotype(TypeDecl) : str | None
+  + relation_policy(list[ParsedFile]) : RelationPolicy
+}
 }
 
-package "docgen.clike" {
-  class text_scan <<module>> {
-    + strip_c_comments / close_brace
-    + split_top_level / split_by_comma
-    + flatten(body, nested_type, property_inner)
-  }
-  class body_scan <<module>> {
-    + iter_method_bodies(...)
-    + scan_body_types(method_body)
-    + instantiated_type_texts(...)
-  }
-  class modifiers <<module>> {
-    + visibility_from(modifiers, rules) : Visibility
-    + has_modifier(modifiers, *keywords) : bool
-  }
-}
+docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
+docgen.core.FileDiagram ..> docgen.core.RelationLevel
+docgen.core.Language *--> docgen.core.TypeVocabulary
+docgen.core.Language ..> docgen.core.ParsedFile
+docgen.core.Language ..> docgen.core.RelationPolicy
+docgen.core.Language ..> docgen.core.SourceText
+docgen.core.Language ..> docgen.core.TypeDecl
+docgen.core.Member *--> docgen.core.MemberKind
+docgen.core.Member *--> docgen.core.Visibility
+docgen.core.TypeDecl *--> "0..*" docgen.core.FieldUsage
+docgen.core.TypeDecl *--> "0..*" docgen.core.Member
+docgen.core.TypeDecl *--> docgen.core.TypeKind
+docgen.core.ParsedFile *--> docgen.core.ResolutionHints
+docgen.core.ParsedFile *--> "0..*" docgen.core.TypeDecl
+docgen.core._PackageIndex *--> docgen.core.FileDiagram
+docgen.core.RunSummary ..> docgen.core.SourceFile
+docgen.core.Relation *--> docgen.core.RelationLevel
+docgen.core.RelationPolicy ..> docgen.core.FieldFacts
+docgen.core.RelationPolicy ..> docgen.core.RelationLevel
+docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.ParsedFile
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.ResolutionHints
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.SourceText
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeDecl
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.core.Language
+docgen.languages.java.JavaLanguage ..> docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage ..> docgen.core.ParsedFile
+docgen.languages.java.JavaLanguage ..> docgen.core.ResolutionHints
+docgen.languages.java.JavaLanguage ..> docgen.core.SourceText
+docgen.languages.java.JavaLanguage ..> docgen.core.TypeDecl
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
+docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
+docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.python.PythonLanguage --|> docgen.core.Language
+docgen.languages.python.PythonLanguage ..> docgen.core.ParsedFile
+docgen.languages.python.PythonLanguage ..> docgen.core.SourceText
+docgen.languages.python.PythonLanguage ..> docgen.core.TypeDecl
+docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
+docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.FieldFacts
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.RelationLevel
+docgen.languages.unity.UnityLanguage ..> docgen.core.ParsedFile
+docgen.languages.unity.UnityLanguage ..> docgen.core.RelationPolicy
+docgen.languages.unity.UnityLanguage ..> docgen.core.TypeDecl
+docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
 
-package "docgen.languages" {
-  class REGISTRY <<dict>> {
-    "java" / "csharp" / "unity"
-  }
-  class JavaLanguage {
-    declarations.py / members.py / vocabulary.py
-  }
-  class CSharpLanguage {
-    declarations.py / members.py / vocabulary.py
-    + enclosing_packages() : parent namespaces + global
-  }
-  class UnityLanguage {
-    + class_stereotype() : <<scriptableObject>>
-    + relation_policy() : UnityRelationPolicy
-  }
-  class UnityRelationPolicy {
-    scriptable_objects : set[str]
-  }
-}
-
-Language <|-- JavaLanguage
-Language <|-- CSharpLanguage
-CSharpLanguage <|-- UnityLanguage
-RelationPolicy <|-- UnityRelationPolicy
-UnityLanguage ..> UnityRelationPolicy : creates
-Language --> TypeVocabulary
-Language ..> ParsedFile : parse_file
-Language ..> RelationPolicy
-RelationPolicy ..> FieldFacts
-ParsedFile *--> "0..*" TypeDecl
-ParsedFile *--> ResolutionHints
-TypeDecl *--> "0..*" Member
-TypeDecl *--> "0..*" FieldUsage
-TypeDecl --> TypeKind
-Member --> Visibility
-Member --> MemberKind
-Relation --> RelationLevel
-FileDiagram *--> "0..*" Relation
-style ..> StereotypeStyle
-REGISTRY --> "3" Language
-cli ..> CommandLine
-cli ..> pipeline
-pipeline ..> RunSummary
-pipeline ..> Language
-pipeline ..> relations
-pipeline ..> ProjectIndex
-pipeline ..> resolution
-pipeline ..> render
-pipeline ..> FileDiagram
-pipeline ..> package_views
-package_views ..> FileDiagram
-package_views ..> puml
-JavaLanguage ..> text_scan
-JavaLanguage ..> body_scan
-JavaLanguage ..> modifiers
-CSharpLanguage ..> text_scan
-CSharpLanguage ..> body_scan
-CSharpLanguage ..> modifiers
-JavaLanguage ..> style
-CSharpLanguage ..> style
-generate_class_diagramm_java ..> cli
-generate_class_diagramm ..> cli
-generate_class_diagramm_unity ..> cli
 @enduml
