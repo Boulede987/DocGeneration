@@ -1,0 +1,9 @@
+namespace shop.util {
+class pricing <<module>> {
+  + {static} CURRENCY
+  + {static} DEFAULT_TAG : Tag
+  # {static} _cache : dict[str, Money]
+  + {static} total_price(list[Product]) : Money
+  # {static} _rounded(Money) : Money
+}
+}

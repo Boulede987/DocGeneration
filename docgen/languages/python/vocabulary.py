@@ -32,4 +32,4 @@ PYTHON_VOCABULARY = TypeVocabulary(
 )
 
 DATACLASS_STYLE = style.StereotypeStyle("dataclass", "#FCF3CF", "#B7950B")
-SKINPARAM_LINES = style.skinparam_lines([DATACLASS_STYLE])
+SKINPARAM_LINES = style.skinparam_lines([DATACLASS_STYLE, style.MODULE_STYLE])

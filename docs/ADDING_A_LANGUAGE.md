@@ -62,6 +62,10 @@ A `ParsedFile` with:
     (strip a module prefix or type arguments yourself).
   - `ENUM`: `enum_values`.
   - `INTERFACE`: `members`.
+  - `MODULE`: a source module's free functions (static methods) and
+    constants (static fields), with `signature_types`/`body_types` so the
+    classes they use become dependencies. Drawn as `<<module>>`; add
+    `style.MODULE_STYLE` to your `kind_styles` to color it.
   - class-like kinds (`CLASS`, `RECORD`, `STRUCT`): `members` in display
     order, plus the usage lists relations are computed from:
     `field_usages` (types held by fields/properties), `signature_types`

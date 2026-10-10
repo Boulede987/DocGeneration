@@ -7,7 +7,7 @@ from docgen.core.model import ABSTRACT_MODIFIER, TypeDecl, TypeKind
 from docgen.core.vocabulary import TypeVocabulary
 
 from . import usages
-from .members import has_abstract_method, members_of
+from .members import has_abstract_method, members_of, module_members
 from .syntax import decorator_names, simple_name
 
 ENUM_BASES = frozenset({"Enum", "IntEnum", "StrEnum", "Flag", "IntFlag"})
@@ -92,3 +92,19 @@ def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> TypeDe
 
 def class_declarations(tree: ast.Module, vocabulary: TypeVocabulary) -> list[TypeDecl]:
     return [_declaration(class_node, vocabulary) for class_node in _classes_in(tree.body)]
+
+
+def module_declaration(tree: ast.Module, name: str, vocabulary: TypeVocabulary) -> TypeDecl | None:
+    """The module's free functions and variables as one <<module>> box, so
+    what they use shows up as dependencies like any class's. None: nothing
+    to draw (the module has only classes and imports)."""
+    members = module_members(tree, vocabulary)
+    if not members:
+        return None
+    return TypeDecl(
+        name=name,
+        kind=TypeKind.MODULE,
+        members=members,
+        signature_types=usages.module_signature_types(tree),
+        body_types=usages.module_body_types(tree),
+    )

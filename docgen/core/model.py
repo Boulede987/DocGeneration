@@ -23,6 +23,7 @@ class TypeKind(Enum):
     ENUM = "enum"
     RECORD = "record"
     STRUCT = "struct"
+    MODULE = "module"  # a source module's free functions and constants
 
 
 class Visibility(Enum):

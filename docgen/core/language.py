@@ -11,6 +11,7 @@ STATIC_STEREOTYPE = "<<static>>"
 _KIND_STEREOTYPES = {
     TypeKind.RECORD: "<<record>>",
     TypeKind.STRUCT: "<<struct>>",
+    TypeKind.MODULE: "<<module>>",
 }
 
 

@@ -18,6 +18,10 @@ PRODUCT_MODULE = "shop/model/product"
 BASE_MODULE = "shop/model/base"
 ORDERS_MODULE = "shop/service/orders"
 HELPERS_MODULE = "shop/util/helpers"
+PRICING_MODULE = "shop/util/pricing"
+PRICING_BOX = "shop.util.pricing"
+# The styling header also names the <<module>> stereotype: a box is the declaration.
+MODULE_BOX_MARKER = "<<module>> {"
 ROOT_MODULE = "app"
 
 
@@ -194,3 +198,57 @@ def test_package_views_group_classes_by_folder(python_run):
     assert "namespace shop.model {" in project
     assert "namespace shop.service {" in project
     assert (output_base / VIEWS_DIR / "model.puml").is_file()
+
+
+def test_module_with_functions_gets_a_module_box(python_run):
+    diagram = _full_diagram(python_run, PRICING_MODULE)
+
+    assert "namespace shop.util {" in diagram
+    assert f"class pricing {MODULE_BOX_MARKER}" in diagram
+
+
+def test_module_functions_are_static_methods(python_run):
+    diagram = _full_diagram(python_run, PRICING_MODULE)
+
+    assert "  + {static} total_price(list[Product]) : Money" in diagram
+    assert "  # {static} _rounded(Money) : Money" in diagram
+
+
+def test_untyped_module_variable_is_a_static_field(python_run):
+    assert "  + {static} CURRENCY\n" in _full_diagram(python_run, PRICING_MODULE)
+
+
+def test_constructed_module_variable_takes_its_class_as_type(python_run):
+    assert "  + {static} DEFAULT_TAG : Tag" in _full_diagram(python_run, PRICING_MODULE)
+
+
+def test_annotated_private_module_variable_keeps_its_type(python_run):
+    assert "  # {static} _cache : dict[str, Money]" in _full_diagram(python_run, PRICING_MODULE)
+
+
+def test_dunder_module_names_are_not_listed(python_run):
+    diagram = _full_diagram(python_run, PRICING_MODULE)
+
+    assert "  + {static} CURRENCY\n" in diagram
+    assert "__all__" not in diagram
+
+
+def test_classes_used_by_module_functions_and_variables_are_dependencies(python_run):
+    diagram = _full_diagram(python_run, PRICING_MODULE)
+
+    for used_class in ("Money", "Product", "Tag"):
+        assert f"{PRICING_BOX} ..> shop.model.{used_class}" in diagram
+
+
+def test_module_with_only_classes_gets_no_module_box(python_run):
+    diagram = _full_diagram(python_run, PRODUCT_MODULE)
+
+    assert "class Product" in diagram
+    assert MODULE_BOX_MARKER not in diagram
+
+
+def test_typevar_assignment_does_not_make_a_module_box(python_run):
+    diagram = _full_diagram(python_run, HELPERS_MODULE)
+
+    assert "class Box {" in diagram
+    assert MODULE_BOX_MARKER not in diagram

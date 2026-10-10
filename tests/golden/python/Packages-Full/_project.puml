@@ -20,6 +20,10 @@ skinparam class {
   BorderColor<<dataclass>> #B7950B
 }
 skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
   BackgroundColor<<static>> #a7faa0
   BorderColor<<static>> #38d610
 }
@@ -94,6 +98,13 @@ class Box {
 class Validator {
   + {static} check(object) : bool
 }
+class pricing <<module>> {
+  + {static} CURRENCY
+  + {static} DEFAULT_TAG : Tag
+  # {static} _cache : dict[str, Money]
+  + {static} total_price(list[Product]) : Money
+  # {static} _rounded(Money) : Money
+}
 }
 
 App --> shop.service.OrderService
@@ -110,5 +121,8 @@ shop.service.OrderService --> shop.service.Order
 shop.service.OrderService ..> shop.model.Money
 shop.service.OrderService ..> shop.model.Product
 shop.service.OrderService ..> shop.util.Validator
+shop.util.pricing ..> shop.model.Money
+shop.util.pricing ..> shop.model.Product
+shop.util.pricing ..> shop.model.Tag
 
 @enduml

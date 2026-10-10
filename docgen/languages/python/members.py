@@ -7,8 +7,8 @@ from docgen.core.model import Member, MemberKind
 from docgen.core.vocabulary import TypeVocabulary
 
 from .syntax import (
-    FunctionNode, constructor_called, decorator_names, functions_of, simple_name, type_text, visibility_of,
-    walk_own_scope,
+    DUNDER, FunctionNode, constructor_called, decorator_names, functions_of, simple_name, type_text,
+    visibility_of, walk_own_scope,
 )
 
 CONSTRUCTOR = "__init__"
@@ -23,6 +23,8 @@ ACCESSOR_DECORATORS = {"getter", "setter", "deleter"}
 VARIADIC_PREFIX = "*"
 KEYWORD_VARIADIC_PREFIX = "**"
 BOUND_PARAMETERS = 1  # self or cls
+TYPING_HELPERS = {"TypeVar", "NewType", "ParamSpec", "TypeVarTuple", "TypeAliasType"}
+TYPE_ALIAS = "TypeAlias"
 _KIND_ORDER = {MemberKind.FIELD: 0, MemberKind.PROPERTY: 1, MemberKind.METHOD: 2}
 
 
@@ -124,12 +126,12 @@ def _parameter_text(parameter: ast.arg, prefix: str = "") -> str:
     return prefix + (type_text(parameter.annotation) if parameter.annotation else parameter.arg)
 
 
-def parameter_types(function: FunctionNode) -> list[str]:
-    """Signature in declaration order, variadics marked '*'/'**'. The bound
-    first parameter (self/cls) is not part of it."""
+def parameter_types(function: FunctionNode, is_method: bool) -> list[str]:
+    """Signature in declaration order, variadics marked '*'/'**'. A
+    method's bound first parameter (self/cls) is not part of it."""
     arguments = function.args
     positional = arguments.posonlyargs + arguments.args
-    if STATIC_METHOD not in decorator_names(function):
+    if is_method and STATIC_METHOD not in decorator_names(function):
         positional = positional[BOUND_PARAMETERS:]
     texts = [_parameter_text(parameter) for parameter in positional]
     if arguments.vararg:
@@ -166,7 +168,7 @@ def _function_member(function: FunctionNode) -> Member:
         is_static=bool(decorators & STATIC_DECORATORS),
         is_abstract=ABSTRACT_DECORATOR in decorators,
         type=return_type(function),
-        params=[] if is_property else parameter_types(function),
+        params=[] if is_property else parameter_types(function, is_method=True),
     )
 
 
@@ -188,6 +190,75 @@ def members_of(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> list[Mem
         if function.name != CONSTRUCTOR and not _is_accessor(function)
     ]
     return sorted(fields + functions, key=lambda member: _KIND_ORDER[member.kind])
+
+
+def module_functions(tree: ast.Module) -> list[FunctionNode]:
+    return [statement for statement in tree.body if isinstance(statement, FunctionNode)]
+
+
+def _is_typing_helper(value: ast.expr | None) -> bool:
+    """T = TypeVar("T") and kin define types, not variables."""
+    return isinstance(value, ast.Call) and simple_name(value.func) in TYPING_HELPERS
+
+
+def _is_dunder(name: str) -> bool:
+    return name.startswith(DUNDER) and name.endswith(DUNDER)
+
+
+def _annotated_variable(statement: ast.AnnAssign) -> list[Attribute]:
+    """A bare annotation ('pending: int') binds nothing; 'X: TypeAlias = ...'
+    names a type."""
+    is_binding = statement.value is not None and isinstance(statement.target, ast.Name)
+    if not is_binding or simple_name(statement.annotation) == TYPE_ALIAS:
+        return []
+    return [Attribute(statement.target.id, type_text(statement.annotation), is_static=True)]
+
+
+def _assigned_variables(statement: ast.Assign) -> list[Attribute]:
+    """'A = B = 1' and 'C, D = 2, 3' bind every name."""
+    if _is_typing_helper(statement.value):
+        return []
+    return [
+        Attribute(target.id, constructor_called(value), is_static=True)
+        for target, value in _targets_and_values(statement)
+        if isinstance(target, ast.Name)
+    ]
+
+
+def _variables_bound_by(statement: ast.stmt) -> list[Attribute]:
+    if isinstance(statement, ast.AnnAssign):
+        return _annotated_variable(statement)
+    if isinstance(statement, ast.Assign):
+        return _assigned_variables(statement)
+    return []
+
+
+def module_variables(tree: ast.Module) -> list[Attribute]:
+    """Every name the module's top-level statements bind: constants and
+    module state alike (_cache, logger). Bindings under if/try depend on the
+    environment (TYPE_CHECKING, platform), so they're left out; dunders
+    (__all__, __version__) are metadata."""
+    return [
+        variable
+        for statement in tree.body
+        for variable in _variables_bound_by(statement)
+        if not _is_dunder(variable.name)
+    ]
+
+
+def _module_function_member(function: FunctionNode) -> Member:
+    return Member(
+        kind=MemberKind.METHOD, name=function.name, visibility=visibility_of(function.name),
+        is_static=True, is_abstract=False, type=return_type(function),
+        params=parameter_types(function, is_method=False),
+    )
+
+
+def module_members(tree: ast.Module, vocabulary: TypeVocabulary) -> list[Member]:
+    """Module variables as static fields, then free functions as static
+    methods: a module behaves like a class with only static members."""
+    variables = [_attribute_member(variable, vocabulary) for variable in module_variables(tree)]
+    return variables + [_module_function_member(function) for function in module_functions(tree)]
 
 
 def has_abstract_method(class_node: ast.ClassDef) -> bool:

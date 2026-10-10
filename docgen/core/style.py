@@ -34,6 +34,8 @@ _BASE_STYLES = [
 ]
 STATIC_STYLE = StereotypeStyle("static", "#a7faa0", "#38d610")
 ENUM_STYLE = StereotypeStyle("enum", "#F5B7B1", "#C0392B")
+# For languages that draw module-level functions and constants.
+MODULE_STYLE = StereotypeStyle("module", "#DDEBF7", "#4A6FA5")
 
 
 def skinparam_lines(kind_styles: list[StereotypeStyle], extra_styles: list[StereotypeStyle] | None = None) -> list[str]:

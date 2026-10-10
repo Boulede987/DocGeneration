@@ -20,6 +20,10 @@ skinparam class {
   BorderColor<<dataclass>> #B7950B
 }
 skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
   BackgroundColor<<static>> #a7faa0
   BorderColor<<static>> #38d610
 }
@@ -40,5 +44,6 @@ package "shop.util" as shop_util [[util.svg]] {
 default_package ..> shop_service
 shop_service ..> shop_model
 shop_service ..> shop_util
+shop_util ..> shop_model
 
 @enduml
