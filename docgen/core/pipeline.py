@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .file_diagram import FileDiagram, FileOutputPaths, write_file_outputs
 from .language import Language
-from .model import ParsedFile
+from .model import ParsedFile, SourceText
 from .package_views import generate_package_views
 from .relations import Relation, RelationPolicy, inheritance_relations, inherited_names, usage_relations
 from .render import render_declaration
@@ -93,7 +93,7 @@ def build_file_diagram(
 
 def _parse_source(language: Language, source: SourceFile) -> ParsedFile:
     text = source.path.read_text(encoding=SOURCE_ENCODING, errors="replace")
-    return language.parse_file(source.path.stem, text)
+    return language.parse_file(SourceText(source.relative_path, text))
 
 
 def _parse_sources(language: Language, sources: list[SourceFile], summary: RunSummary) -> dict[SourceFile, ParsedFile]:

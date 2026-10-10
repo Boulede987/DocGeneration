@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from .model import ParsedFile, TypeDecl, TypeKind
+from .model import ParsedFile, SourceText, TypeDecl, TypeKind
 from .relations import RelationPolicy
 from .vocabulary import TypeVocabulary
 
@@ -31,9 +31,10 @@ class Language(ABC):
     hidden_bases: frozenset[str] = frozenset()
 
     @abstractmethod
-    def parse_file(self, stem: str, source: str) -> ParsedFile:
-        """Parse one source file's text. Return a ParsedFile with no
-        declarations when the file declares no type."""
+    def parse_file(self, source: SourceText) -> ParsedFile:
+        """Parse one source file. Return a ParsedFile with no declarations
+        when the file declares no type; raise when the text can't be
+        parsed (only that file fails)."""
 
     def enclosing_packages(self, package: str | None) -> list[str | None]:
         """Packages whose types this package sees without an import,

@@ -1,8 +1,10 @@
-"""Language-neutral description of parsed source code. Nothing after parsing
-reads source text: these types are its only input."""
+"""Language-neutral description of source code: SourceText is what a
+language parser receives; everything else is what it produces. Nothing
+after parsing reads source text."""
 
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 
 TYPE_PARAMETERS_START = "<"
 ABSTRACT_MODIFIER = "abstract"
@@ -61,9 +63,11 @@ class FieldUsage:
 
 @dataclass
 class TypeDecl:
-    """One declared type. Type texts (base_class, interfaces, the usage
-    lists) stay as written in source; simple names are derived from them on
-    demand."""
+    """One declared type. Type texts (base_class, additional_bases,
+    interfaces, the usage lists) stay as written in source; simple names are
+    derived from them on demand. additional_bases: further superclasses,
+    for languages with multiple inheritance, in declaration order after
+    base_class."""
     name: str
     kind: TypeKind
     modifiers: frozenset[str] = frozenset()
@@ -75,6 +79,7 @@ class TypeDecl:
     signature_types: list[str] = field(default_factory=list)
     body_types: list[str] = field(default_factory=list)
     newed_types: list[str] = field(default_factory=list)
+    additional_bases: list[str] = field(default_factory=list)
 
     @property
     def bare_name(self) -> str:
@@ -92,6 +97,18 @@ class TypeDecl:
     def has_usages(self) -> bool:
         """Enums and interfaces are drawn, but never get usage relations."""
         return self.kind not in (TypeKind.ENUM, TypeKind.INTERFACE)
+
+
+@dataclass(frozen=True)
+class SourceText:
+    """One source file as a language parser receives it. relative_path is
+    relative to the source root it was found under."""
+    relative_path: Path
+    text: str
+
+    @property
+    def stem(self) -> str:
+        return self.relative_path.stem
 
 
 @dataclass

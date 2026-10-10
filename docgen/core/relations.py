@@ -32,9 +32,10 @@ class Relation:
     level: RelationLevel
     multiplicity: str | None = None
 
-    def render(self, source: str, target: str) -> str:
+    def render(self, qualified_source: str, qualified_target: str) -> str:
+        """The PlantUML line, with the ends as the caller qualified them."""
         multiplicity = f" {self.multiplicity}" if self.multiplicity else ""
-        return f"{source} {self.arrow}{multiplicity} {target}"
+        return f"{qualified_source} {self.arrow}{multiplicity} {qualified_target}"
 
 
 @dataclass(frozen=True)
@@ -58,9 +59,15 @@ class RelationPolicy:
         return ASSOCIATES, RelationLevel.WEAK
 
 
+def _superclasses(declaration: TypeDecl) -> list[str]:
+    """Bare names, base class first, each once: arrow order follows the
+    declaration."""
+    primary_base = [declaration.base_class] if declaration.base_class else []
+    return list(dict.fromkeys(bare_type_name(base) for base in primary_base + declaration.additional_bases))
+
+
 def inherited_names(declaration: TypeDecl) -> set[str]:
-    bases = [declaration.base_class] if declaration.base_class else []
-    return {bare_type_name(base) for base in bases + declaration.interfaces}
+    return set(_superclasses(declaration)) | {bare_type_name(interface) for interface in declaration.interfaces}
 
 
 def inheritance_relations(declaration: TypeDecl, hidden_bases: frozenset[str]) -> list[Relation]:
@@ -68,8 +75,9 @@ def inheritance_relations(declaration: TypeDecl, hidden_bases: frozenset[str]) -
     never reported again as a usage)."""
     source = declaration.bare_name
     relations: list[Relation] = []
-    if declaration.base_class and bare_type_name(declaration.base_class) not in hidden_bases:
-        relations.append(Relation(source, INHERITS, bare_type_name(declaration.base_class), RelationLevel.INHERITANCE))
+    for base in _superclasses(declaration):
+        if base not in hidden_bases:
+            relations.append(Relation(source, INHERITS, base, RelationLevel.INHERITANCE))
     for interface in declaration.interfaces:
         relations.append(Relation(source, REALIZES, bare_type_name(interface), RelationLevel.INHERITANCE))
     return relations
@@ -77,6 +85,8 @@ def inheritance_relations(declaration: TypeDecl, hidden_bases: frozenset[str]) -
 
 def _merge(previous: FieldFacts | None, name: str, *, is_collection: bool, is_public: bool,
            is_serialized: bool, is_newed: bool) -> FieldFacts:
+    """Per-field facts are OR-ed; is_newed describes the type in the whole
+    declaration (not one field), so it's the same for every field."""
     if previous is None:
         return FieldFacts(
             target=name, is_collection=is_collection, is_public=is_public,

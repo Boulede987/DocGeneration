@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-10-10 — Language contract widened for Python
+
+**Context:** Python, the first language added after the shared `docgen`
+architecture, hit four gaps in the `Language` contract: no file location
+(Python packages come from folders), `<...>`-only type arguments, every
+field assumed typed, and single inheritance only.
+
+**Decision:** `parse_file(SourceText)` (text + relative path);
+`TypeVocabulary.type_argument_brackets`; untyped fields render without
+`: type`; `TypeDecl.additional_bases` drawn as `--|>`. Java, C# and Unity
+output stays byte-identical. Python imports are resolved without new core
+code: `from a.b.c import X` makes both `a.b.c` and `a.b` candidate packages
+and the shared resolver keeps whichever declares `X`.
+
+**Alternatives considered:**
+- A Python-only resolver for imports — rejected: the namespace-import
+  candidates already express "one of these packages", and core stays
+  language-neutral.
+- Merging all bases into `interfaces` — rejected: `..|>` (realization)
+  would misstate plain inheritance.
+
 ## 2026-10-10 — Package views group by package, not by inferred "module"
 
 **Context:** The general views (`Packages/`, `Namespaces/`) need a grouping

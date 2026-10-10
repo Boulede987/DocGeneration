@@ -16,7 +16,8 @@ def _render_member(member: Member) -> str:
     if member.kind is MemberKind.METHOD:
         return_suffix = f" : {member.type}" if member.type else ""
         return f"{head}({', '.join(member.params)}){return_suffix}"
-    return f"{head} : {member.type}"
+    # Languages without mandatory types (Python) can leave a field's type unknown.
+    return f"{head} : {member.type}" if member.type else head
 
 
 def _header(declaration: TypeDecl, stereotype: str | None) -> str:

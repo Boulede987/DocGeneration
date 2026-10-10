@@ -9,7 +9,7 @@ alone. Syntax, one declaration per line:
 
 from docgen.core.language import Language
 from docgen.core.model import (
-    FieldUsage, Member, MemberKind, ParsedFile, ResolutionHints, TypeDecl, TypeKind, Visibility,
+    FieldUsage, Member, MemberKind, ParsedFile, ResolutionHints, SourceText, TypeDecl, TypeKind, Visibility,
 )
 from docgen.core.vocabulary import TypeVocabulary
 
@@ -27,9 +27,9 @@ class ToyLanguage(Language):
     skinparam_lines = ["skinparam shadowing false"]
     vocabulary = TypeVocabulary(primitives=frozenset({"int", "str"}), collection_wrappers=frozenset())
 
-    def parse_file(self, stem: str, source: str) -> ParsedFile:
-        parsed = ParsedFile(stem=stem, package=None, declarations=[], hints=ResolutionHints())
-        for line_number, line in enumerate(source.splitlines(), start=1):
+    def parse_file(self, source: SourceText) -> ParsedFile:
+        parsed = ParsedFile(stem=source.stem, package=None, declarations=[], hints=ResolutionHints())
+        for line_number, line in enumerate(source.text.splitlines(), start=1):
             words = line.replace(":", " ").split()
             if words:
                 _apply_line(parsed, words, line_number)

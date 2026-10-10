@@ -1,6 +1,6 @@
 from docgen.clike.text_scan import strip_c_comments
 from docgen.core.language import Language
-from docgen.core.model import FieldUsage, ParsedFile, ResolutionHints, TypeDecl, TypeKind
+from docgen.core.model import FieldUsage, ParsedFile, ResolutionHints, SourceText, TypeDecl, TypeKind
 
 from . import members
 from .declarations import TypeHeader, find_type_headers, parse_imports, parse_package, strip_strings
@@ -21,10 +21,10 @@ class JavaLanguage(Language):
     skinparam_lines = SKINPARAM_LINES
     vocabulary = JAVA_VOCABULARY
 
-    def parse_file(self, stem: str, source: str) -> ParsedFile:
-        text = strip_strings(strip_c_comments(source))
+    def parse_file(self, source: SourceText) -> ParsedFile:
+        text = strip_strings(strip_c_comments(source.text))
         return ParsedFile(
-            stem=stem,
+            stem=source.stem,
             package=parse_package(text),
             declarations=[self._declaration(header) for header in find_type_headers(text)],
             hints=ResolutionHints(type_imports=parse_imports(text)),

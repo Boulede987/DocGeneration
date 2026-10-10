@@ -1,7 +1,7 @@
 from docgen.clike.text_scan import strip_c_comments
 from docgen.core import style
 from docgen.core.language import Language
-from docgen.core.model import ParsedFile, ResolutionHints, TypeDecl, TypeKind
+from docgen.core.model import ParsedFile, ResolutionHints, SourceText, TypeDecl, TypeKind
 
 from . import members
 from .declarations import TypeHeader, find_type_headers, parse_namespace, parse_usings, strip_strings
@@ -25,10 +25,10 @@ class CSharpLanguage(Language):
     skinparam_lines = style.skinparam_lines([STRUCT_STYLE])
     vocabulary = CSHARP_VOCABULARY
 
-    def parse_file(self, stem: str, source: str) -> ParsedFile:
-        text = strip_strings(strip_c_comments(source))
+    def parse_file(self, source: SourceText) -> ParsedFile:
+        text = strip_strings(strip_c_comments(source.text))
         return ParsedFile(
-            stem=stem,
+            stem=source.stem,
             package=parse_namespace(text),
             declarations=[self._declaration(header) for header in find_type_headers(text)],
             hints=ResolutionHints(namespace_imports=parse_usings(text)),
