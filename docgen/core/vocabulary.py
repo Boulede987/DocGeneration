@@ -8,7 +8,7 @@ from .model import TYPE_PARAMETERS_START
 
 TYPE_PARAMETERS_END = ">"
 _TYPE_TEXT_SEPARATORS = re.compile(r"[<>,\[\]\s\.\*\(\)]+")
-_TYPE_NAME = re.compile(r"^[A-Z]\w*$")
+_TYPE_NAME = re.compile(r"^_*[A-Z]\w*$")  # leading underscores: private classes
 _ARRAY_SUFFIX = "[]"
 _UML_MANY_SUFFIX = "[*]"
 _NULLABLE_MARK = "?"

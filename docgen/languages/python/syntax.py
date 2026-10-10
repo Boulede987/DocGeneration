@@ -99,8 +99,9 @@ def walk_own_scope(function: FunctionNode) -> Iterator[ast.AST]:
 
 def looks_like_class_name(name: str) -> bool:
     """PEP 8 capitalizes class names and nothing else common, so a
-    capitalized callee or receiver is taken to be a class."""
-    return name[:1].isupper()
+    capitalized callee or receiver is taken to be a class (leading
+    underscores mark private classes, e.g. _Cache)."""
+    return name.lstrip(PROTECTED_PREFIX)[:1].isupper()
 
 
 def constructor_called(value: ast.AST | None) -> str | None:
