@@ -5,9 +5,10 @@ from docgen.core.language import Language
 from .csharp import CSharpLanguage
 from .java import JavaLanguage
 from .python import PythonLanguage
+from .rust import RustLanguage
 from .unity import UnityLanguage
 
 REGISTRY: dict[str, Language] = {
     language.name: language
-    for language in (JavaLanguage(), CSharpLanguage(), UnityLanguage(), PythonLanguage())
+    for language in (JavaLanguage(), CSharpLanguage(), UnityLanguage(), PythonLanguage(), RustLanguage())
 }

@@ -1,0 +1,61 @@
+@startuml language
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class RustLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile[RustFacts]
+  + link(Project[RustFacts]) : Mapping[ParsedFile[RustFacts], list[Relation]]
+}
+}
+
+docgen.languages.rust.RustLanguage --|> docgen.core.Language
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.CrateIndex
+docgen.languages.rust.RustLanguage ..> docgen.core.ParsedFile
+docgen.languages.rust.RustLanguage ..> docgen.core.Project
+docgen.languages.rust.RustLanguage ..> docgen.core.Relation
+docgen.languages.rust.RustLanguage ..> docgen.core.ResolutionHints
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.RustFacts
+docgen.languages.rust.RustLanguage ..> docgen.core.SourceText
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.vocabulary
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.syntax
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.modules
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.items
+docgen.languages.rust.RustLanguage ..> docgen.languages.rust.linking
+
+@enduml

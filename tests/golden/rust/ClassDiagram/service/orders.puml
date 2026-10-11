@@ -1,0 +1,60 @@
+@startuml orders
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace service.orders {
+interface Repository <<interface>> {
+  + find(&str) : Option<Product>
+}
+class OrderService {
+  - products : Product[*]
+  - repository : Box<dyn Repository>
+  - labels : Tag[*]
+  - draft : Option<Draft>
+  - fallback : util::money::Currency
+  + total() : Money
+  + {static} rate() : u32
+  + best(Vec<Box<dyn PricedItem>>) : Option<Product>
+  + category() : Option<crate::model::product::Category>
+  + {static} empty() : Money
+}
+class Draft {
+  + id : u32
+  - source : Option<Box<dyn Repository>>
+}
+}
+
+service.orders.OrderService *--> "0..*" model.product.Product
+service.orders.OrderService *--> service.orders.Repository
+service.orders.OrderService *--> "0..*" model.tag.Tag
+service.orders.OrderService *--> service.orders.Draft
+service.orders.OrderService *--> util.money.Currency
+service.orders.Draft *--> service.orders.Repository
+
+@enduml

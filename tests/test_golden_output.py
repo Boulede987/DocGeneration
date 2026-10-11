@@ -11,6 +11,7 @@ JAVA_SCRIPT = "generate_class_diagramm_java.py"
 CSHARP_SCRIPT = "generate_class_diagramm.py"
 UNITY_SCRIPT = "generate_class_diagramm_unity.py"
 PYTHON_SCRIPT = "generate_class_diagramm_python.py"
+RUST_SCRIPT = "generate_class_diagramm_rust.py"
 OUT_OPTION = "-o"
 JAVA_SOURCE_ROOT = FIXTURES / "java" / "src"
 JAVA_LIBRARY_ROOT = FIXTURES / "java" / "lib"
@@ -34,6 +35,14 @@ def test_python_output_matches_golden(tmp_path: Path):
     # The fixture holds one file with a deliberate syntax error.
     assert result.returncode == EXIT_FILE_ERRORS, result.stderr
     assert_same_tree(tmp_path, GOLDEN / "python")
+
+
+def test_rust_output_matches_golden(tmp_path: Path):
+    result = run_script(RUST_SCRIPT, FIXTURES / "rust" / "src", OUT_OPTION, tmp_path, cwd=tmp_path)
+
+    # The fixture holds one file that can't be parsed.
+    assert result.returncode == EXIT_FILE_ERRORS, result.stderr
+    assert_same_tree(tmp_path, GOLDEN / "rust")
 
 
 @pytest.mark.parametrize("script, language", [(CSHARP_SCRIPT, "csharp"), (UNITY_SCRIPT, "unity")])

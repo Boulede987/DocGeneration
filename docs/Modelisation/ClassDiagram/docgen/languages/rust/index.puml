@@ -1,0 +1,79 @@
+@startuml index
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class TypeRef <<dataclass>> {
+  + module : str | None
+  + name : str
+}
+class Declared <<dataclass>> {
+  + parsed : ParsedFile[RustFacts]
+  + declaration : TypeDecl
+  + facts : RustTypeFacts
+}
+class ModuleBox <<dataclass>> {
+  + ref : TypeRef
+  + member_names : str[*]
+}
+class CrateIndex {
+  # _declared : dict[TypeRef, Declared]
+  # _boxes : dict[str | None, ModuleBox]
+  # _drawn_in : dict[str, str | None]
+  # _index_file(ParsedFile[RustFacts])
+  # _module(list[str]) : str | None
+  + declared(TypeRef) : Declared | None
+  # _bound_path(str, RustFacts) : list[str] | None
+  # _absolute_path(list[str], RustFacts) : list[str] | None
+  # _glob_modules(RustFacts) : list[str | None]
+  + resolve_type(str, RustFacts) : TypeRef | None
+  # _box_declaring(str | None, str) : TypeRef | None
+  + resolve_item(ItemUse, RustFacts) : TypeRef | None
+}
+class index <<module>> {
+  # {static} _MODULE_KEYWORDS
+  # {static} _module_key(list[str]) : str | None
+  # {static} _absolute(list[str], str | None, tuple[str, ...]) : list[str] | None
+}
+}
+
+docgen.languages.rust.Declared *--> docgen.core.ParsedFile
+docgen.languages.rust.Declared *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.Declared *--> docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.Declared *--> docgen.core.TypeDecl
+docgen.languages.rust.ModuleBox *--> docgen.languages.rust.TypeRef
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.Declared
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.ModuleBox
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.TypeRef
+
+@enduml

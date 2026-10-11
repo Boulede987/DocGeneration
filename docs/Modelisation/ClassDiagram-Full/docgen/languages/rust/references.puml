@@ -1,0 +1,59 @@
+@startuml references
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class references <<module>> {
+  + {static} PATH_EXPRESSION
+  + {static} CALL_EXPRESSION
+  + {static} IDENTIFIER
+  + {static} PATTERN_FIELD
+  + {static} CLOSURE_PARAMETERS
+  # {static} _MODULE_KEYWORDS
+  # {static} _is_type_segment(str) : bool
+  # {static} _is_constant(str) : bool
+  # {static} _path_segments(Node) : list[str]
+  # {static} _type_in_path(list[str]) : str | None
+  + {static} type_names(Node | None) : list[str]
+  # {static} _pattern_names(Node) : set[str]
+  # {static} _module_path_use(list[str]) : ItemUse | None
+  + {static} item_uses(Node | None, list[UseBinding]) : list[ItemUse]
+}
+}
+
+docgen.languages.rust.references ..> docgen.languages.rust.ItemUse
+docgen.languages.rust.references ..> docgen.languages.rust.UseBinding
+docgen.languages.rust.references ..> docgen.languages.rust.syntax
+docgen.languages.rust.references ..> docgen.languages.rust.modules
+
+@enduml

@@ -1,0 +1,15 @@
+namespace util.money {
+enum Currency <<enum>> {
+  Eur
+  Usd
+}
+class Money {
+  + cents : i64
+  + currency : Currency
+}
+class money <<module>> {
+  + {static} zero() : Money
+}
+}
+
+util.money.Money *--> util.money.Currency

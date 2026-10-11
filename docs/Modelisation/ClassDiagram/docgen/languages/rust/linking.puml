@@ -1,0 +1,71 @@
+@startuml linking
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class Located <<dataclass>> {
+  + reference : ReferenceT
+  + context : RustFacts
+}
+class TypeLinks <<dataclass>> {
+  + supertraits : Located[str][*]
+  + realized_traits : Located[str][*]
+  + held : Located[HeldType][*]
+  + used_types : Located[str][*]
+  + item_uses : Located[ItemUse][*]
+}
+class _RelationSet {
+  + source : TypeRef
+  + relations : dict[tuple[str, TypeRef], Relation]
+  + add(str, TypeRef, RelationLevel, str | None)
+  + targets() : set[TypeRef]
+}
+class linking <<module>> {
+  # {static} _own_links(Project[RustFacts]) : dict[TypeRef, TypeLinks]
+  # {static} _merge(ImplBlock, RustFacts, TypeLinks)
+  + {static} merge_impls(Project[RustFacts], CrateIndex) : dict[TypeRef, TypeLinks]
+  # {static} _add_inheritance(_RelationSet, TypeLinks, CrateIndex)
+  # {static} _add_held(_RelationSet, TypeLinks, CrateIndex)
+  # {static} _add_dependencies(_RelationSet, TypeLinks, CrateIndex)
+  + {static} file_relations(ParsedFile[RustFacts], dict[TypeRef, TypeLinks], CrateIndex) : list[Relation]
+}
+}
+
+docgen.languages.rust.Located *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.HeldType
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.Located
+docgen.languages.rust._RelationSet *--> docgen.core.Relation
+docgen.languages.rust._RelationSet *--> docgen.languages.rust.TypeRef
+
+@enduml

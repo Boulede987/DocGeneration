@@ -1,5 +1,41 @@
 # Decisions
 
+## 2026-10-11 — Rust support on the UML core, with its own linking
+
+**Context:** Rust has no classes: structs, enums and traits are declared
+apart from their methods (impl blocks, possibly in other files), and
+ownership says more about a relation than visibility. Adding it was the
+test of the "core = UML model" refactor.
+
+**Decision:** `docgen/languages/rust` implements the core contract directly
+(tree-sitter parser; no `docgen/oo` base class, only its `TypeVocabulary`
+for display). Its `link` merges impl blocks into their type across files,
+resolves every name with Rust's path rules (`crate::`, `self::`,
+`super::`, `use` incl. `as` and globs, then the file's module) and gives
+each relation its `target_package`. Ownership decides strength: by value,
+`Box`, collections → composition; `&`, `Rc`, `Arc`, `Weak` → association.
+Rendering choices: lifetimes are dropped (a quote starts a PlantUML
+comment); the free-items box is named after its module (`crate` at the
+root, `<name>_module` when a type of the file has the module's name, as
+in Python) and drawn inside its module, since a file's package is its
+module; inline `mod x { }` items are drawn in the file's module (paths
+through them still resolve) and `#[cfg(test)]` code is skipped; an impl of
+a type outside the crate is a NOTE, a blanket impl on a type parameter
+(`impl<T> Tr for T`) is skipped silently. No file under
+`docgen/core` or `docgen/oo` changed. tree-sitter is imported on first use,
+so the other languages don't need it.
+
+**Alternatives considered:**
+- Fitting Rust into the object-oriented toolkit — rejected: impl merging
+  and ownership-based strength would have needed new toolkit concepts
+  (the design abandoned before the refactor).
+- Drawing a free-items box in the parent package (`util.pricing` instead
+  of `util.pricing.pricing`) — not possible without a core change (one
+  package per file); left as is.
+- Falling back to "unique name in the crate" for unresolved names, like
+  the other languages — rejected: Rust names are always imported or
+  qualified, so a guess would only add wrong arrows.
+
 ## 2026-10-11 — Python draws dependencies on other modules' functions; relations may name their target's package
 
 **Context:** Python modules mostly call each other's functions, which were

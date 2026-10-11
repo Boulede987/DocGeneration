@@ -1,0 +1,53 @@
+@startuml rust_link
+title Rust: linking the crate once every file is parsed
+
+start
+:Index every declared type and every <<module>> box\nby (module path, name);
+note right
+  module path from the file:
+  lib.rs / main.rs -> crate root (no package)
+  a/b.rs, a/b/mod.rs -> a.b
+  inline mod x { } -> the file's module; #[cfg(test)] skipped
+end note
+
+partition "Resolve a name used in a file" {
+  :name as written (Foo, b::Foo, crate::a::Foo,\nsuper::Foo, self::Foo, Self);
+  if (path-qualified?) then (yes)
+    :crate:: from the root, super:: one module up,\nself:: this module, a::b:: through a use binding\nor from this module;
+  elseif (bound by a use?) then (use a::Foo / use a::Bar as Foo)
+    :that path;
+  elseif (declared in this module?) then (yes)
+    :this module;
+  elseif (exactly one glob use provides it?) then (use a::*)
+    :that glob's module;
+  else (std, external crate, ambiguous)
+    :unknown: no relation;
+  endif
+}
+
+partition "Merge impl blocks" {
+  repeat :Next impl block (any file);
+    :resolve its target type from the impl's file;
+    if (declared in the crate?) then (yes)
+      :add its methods to that declaration\n(static when no self receiver);
+      if (impl Trait for Type?) then (yes)
+        :remember Type ..|> Trait\n(trait resolved from the impl's file);
+      endif
+      :its signature/body types and item uses\ncount for the target type, resolved from the impl's file;
+    else (no: impl of an external type)
+      :note "impl X: type not in the crate" on the impl's file;
+    endif
+  repeat while (more impl blocks?)
+}
+
+partition "Relations of each declared type (drawn in its file)" {
+  :supertraits -> --|> (trait A: B);
+  :merged trait impls -> ..|>;
+  :fields -> held types:\nowned, Box, Vec/HashMap/... -> composition (*-->, "0..*" for collections)\n&, &mut, Rc, Arc, Weak -> association (-->);
+  :signature and body types not already related -> ..> (weak);
+  :uses of another module's fn / const / static -> ..> to its <<module>> box;
+  :every relation carries its target's module as target_package;
+  :keep only targets declared in the crate; one relation per (source, arrow, target);
+}
+stop
+@enduml

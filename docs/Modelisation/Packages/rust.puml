@@ -1,0 +1,343 @@
+@startuml rust
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace docgen.languages.rust {
+enum Ownership <<enum>> {
+  OWNED
+  SHARED
+}
+class HeldType <<dataclass>> {
+  + name : str
+  + ownership : Ownership
+  + is_collection : bool
+}
+class ItemUse <<dataclass>> {
+  + module_path : str | None
+  + name : str
+}
+class UseBinding <<dataclass>> {
+  + local_name : str
+  + path : tuple[str, ...]
+  + is_glob : bool
+  + scope : tuple[str, ...]
+}
+class RustTypeFacts <<dataclass>> {
+  + name : str
+  + fields : HeldType[*]
+  + supertraits : str[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class ImplBlock <<dataclass>> {
+  + target : str
+  + trait : str | None
+  + members : Member[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class RustFacts <<dataclass>> {
+  + module_path : str | None
+  + types : RustTypeFacts[*]
+  + impl_blocks : ImplBlock[*]
+  + uses : UseBinding[*]
+  + box_name : str | None
+  + inline_modules : str[*]
+}
+class TypeRef <<dataclass>> {
+  + module : str | None
+  + name : str
+}
+class Declared <<dataclass>> {
+  + parsed : ParsedFile[RustFacts]
+  + declaration : TypeDecl
+  + facts : RustTypeFacts
+}
+class ModuleBox <<dataclass>> {
+  + ref : TypeRef
+  + member_names : str[*]
+}
+class CrateIndex {
+  # _declared : dict[TypeRef, Declared]
+  # _boxes : dict[str | None, ModuleBox]
+  # _drawn_in : dict[str, str | None]
+  # _index_file(ParsedFile[RustFacts])
+  # _module(list[str]) : str | None
+  + declared(TypeRef) : Declared | None
+  # _bound_path(str, RustFacts) : list[str] | None
+  # _absolute_path(list[str], RustFacts) : list[str] | None
+  # _glob_modules(RustFacts) : list[str | None]
+  + resolve_type(str, RustFacts) : TypeRef | None
+  # _box_declaring(str | None, str) : TypeRef | None
+  + resolve_item(ItemUse, RustFacts) : TypeRef | None
+}
+class index <<module>> {
+  # {static} _MODULE_KEYWORDS
+  # {static} _module_key(list[str]) : str | None
+  # {static} _absolute(list[str], str | None, tuple[str, ...]) : list[str] | None
+}
+class ParsedItems <<dataclass>> {
+  + declarations : TypeDecl[*]
+  + facts : RustFacts
+  + add(TypeDecl, RustTypeFacts)
+}
+class CodeFacts <<dataclass>> {
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class items <<module>> {
+  + {static} STRUCT
+  + {static} ENUM
+  + {static} TRAIT
+  + {static} IMPL
+  + {static} MODULE
+  + {static} FUNCTION_SIGNATURE
+  + {static} CONSTANT
+  + {static} STATIC
+  + {static} FUNCTIONS
+  + {static} VALUES
+  + {static} FREE_ITEMS
+  + {static} ENUM_VARIANT
+  + {static} TYPE_PARAMETER_NODES
+  + {static} ROOT_BOX_NAME
+  + {static} MODULE_BOX_SUFFIX
+  # {static} _declared_name(Node) : str
+  # {static} _code_facts(list[Node], list[UseBinding]) : CodeFacts
+  # {static} _signature_parts(Node) : list[Node | None]
+  # {static} _code_part(Node) : Node | None
+  # {static} _struct(Node, TypeVocabulary) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _variant_field_types(Node) : list[Node]
+  # {static} _enum(Node) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _trait(Node, list[UseBinding]) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _type_path(Node) : Node
+  # {static} _type_parameter_names(Node) : set[str]
+  # {static} _impl_target(Node) : str | None
+  # {static} _impl(Node, list[UseBinding]) : ImplBlock | None
+  # {static} _items_of(Node, list[str], str) : list[Node]
+  # {static} _box_name(str | None, set[str]) : str
+  # {static} _module_box(list[Node], str, list[UseBinding]) : tuple[TypeDecl, RustTypeFacts]
+  + {static} parse_items(Node, str | None, list[UseBinding], TypeVocabulary) : ParsedItems
+}
+class RustLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile[RustFacts]
+  + link(Project[RustFacts]) : Mapping[ParsedFile[RustFacts], list[Relation]]
+}
+class Located <<dataclass>> {
+  + reference : ReferenceT
+  + context : RustFacts
+}
+class TypeLinks <<dataclass>> {
+  + supertraits : Located[str][*]
+  + realized_traits : Located[str][*]
+  + held : Located[HeldType][*]
+  + used_types : Located[str][*]
+  + item_uses : Located[ItemUse][*]
+}
+class _RelationSet {
+  + source : TypeRef
+  + relations : dict[tuple[str, TypeRef], Relation]
+  + add(str, TypeRef, RelationLevel, str | None)
+  + targets() : set[TypeRef]
+}
+class linking <<module>> {
+  # {static} _own_links(Project[RustFacts]) : dict[TypeRef, TypeLinks]
+  # {static} _merge(ImplBlock, RustFacts, TypeLinks)
+  + {static} merge_impls(Project[RustFacts], CrateIndex) : dict[TypeRef, TypeLinks]
+  # {static} _add_inheritance(_RelationSet, TypeLinks, CrateIndex)
+  # {static} _add_held(_RelationSet, TypeLinks, CrateIndex)
+  # {static} _add_dependencies(_RelationSet, TypeLinks, CrateIndex)
+  + {static} file_relations(ParsedFile[RustFacts], dict[TypeRef, TypeLinks], CrateIndex) : list[Relation]
+}
+class members <<module>> {
+  + {static} FUNCTION
+  + {static} NAMED_FIELDS
+  + {static} FIELD_DECLARATION
+  + {static} PARAMETER
+  + {static} SELF_PARAMETER
+  + {static} VISIBILITY
+  + {static} NOT_FIELD_TYPES
+  + {static} PUBLIC
+  + {static} MODULE_PRIVATE
+  + {static} visibility_of_modifier(Node | None) : Visibility
+  + {static} visibility(Node) : Visibility
+  # {static} _field_member(str, Node, Visibility, TypeVocabulary) : Member
+  # {static} _named_fields(Node, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  # {static} _tuple_fields(Node, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  + {static} fields(Node | None, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  # {static} _is_static(Node) : bool
+  + {static} function_member(Node, Visibility) : Member
+  + {static} value_member(Node, Visibility) : Member
+  + {static} free_item_member(Node) : Member
+}
+class modules <<module>> {
+  + {static} MODULE_SEPARATOR
+  + {static} CRATE_ROOT_STEMS
+  + {static} MODULE_DIRECTORY_STEM
+  + {static} CRATE
+  + {static} SELF_MODULE
+  + {static} PARENT_MODULE
+  + {static} UNNAMED_IMPORT
+  + {static} GLOB_LOCAL_NAME
+  + {static} INLINE_MODULE
+  + {static} USE_DECLARATION
+  # {static} _PATH_NODES
+  + {static} module_path_of(Path) : str | None
+  + {static} path_segments(Node) : list[str]
+  # {static} _imported_path(list[str]) : list[str]
+  # {static} _bindings(Node, list[str]) : list[UseBinding]
+  + {static} use_bindings(Node, tuple[str, ...]) : list[UseBinding]
+}
+class ownership <<module>> {
+  + {static} SHARING_WRAPPERS
+  + {static} COLLECTION_WRAPPERS
+  + {static} PASS_THROUGH_WRAPPERS
+  + {static} STANDARD_WRAPPERS
+  + {static} FUNCTION_TYPE
+  + {static} REFERENCE_NODES
+  + {static} SEQUENCE_NODES
+  + {static} GENERIC_TYPE
+  # {static} _wrapper_name(Node) : str
+  # {static} _held_in_generic(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_types_of(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_in(list[Node], Ownership, bool) : list[HeldType]
+  + {static} held_types(Node) : list[HeldType]
+}
+class references <<module>> {
+  + {static} PATH_EXPRESSION
+  + {static} CALL_EXPRESSION
+  + {static} IDENTIFIER
+  + {static} PATTERN_FIELD
+  + {static} CLOSURE_PARAMETERS
+  # {static} _MODULE_KEYWORDS
+  # {static} _is_type_segment(str) : bool
+  # {static} _is_constant(str) : bool
+  # {static} _path_segments(Node) : list[str]
+  # {static} _type_in_path(list[str]) : str | None
+  + {static} type_names(Node | None) : list[str]
+  # {static} _pattern_names(Node) : set[str]
+  # {static} _module_path_use(list[str]) : ItemUse | None
+  + {static} item_uses(Node | None, list[UseBinding]) : list[ItemUse]
+}
+class RustSyntaxError {
+}
+class RustSupportMissing {
+}
+class syntax <<module>> {
+  + {static} SOURCE_ENCODING
+  + {static} INSTALL_HINT
+  + {static} PATH_SEPARATOR
+  + {static} TYPE_ARGUMENTS
+  + {static} ERROR_NODE
+  + {static} NAMED_TYPE_NODES
+  + {static} SELF_TYPE
+  + {static} ATTRIBUTE
+  + {static} COMMENTS
+  # {static} _TEST_ONLY
+  # {static} _FIRST_LINE_NUMBER
+  # {static} _LIFETIME_BINDER
+  # {static} _LIFETIME_BOUND
+  # {static} _LIFETIME_ARGUMENT
+  # {static} _LIFETIME
+  # {static} _EMPTY_ARGUMENTS
+  # {static} _SPACES
+  # {static} _parser() : Parser
+  # {static} _first_error(Node) : Node | None
+  + {static} parse_tree(str) : Node
+  + {static} is_test_only(Node) : bool
+  + {static} node_text(Node) : str
+  + {static} display_text(Node) : str
+  + {static} without_type_arguments(str) : str
+  + {static} field(Node, str) : Node | None
+  + {static} named_children(Node | None, str | None) : list[Node]
+  + {static} walk(Node, frozenset[str]) : Iterator[Node]
+}
+class vocabulary <<module>> {
+  + {static} NON_MAP_COLLECTIONS
+  + {static} RUST_VOCABULARY : TypeVocabulary
+  + {static} SKINPARAM_LINES
+}
+}
+class docgen.core.Language <<external>> [[core.svg]] {
+}
+class docgen.core.Member <<external>> [[core.svg]] {
+}
+class docgen.core.ParsedFile <<external>> [[core.svg]] {
+}
+class docgen.core.Relation <<external>> [[core.svg]] {
+}
+class docgen.core.TypeDecl <<external>> [[core.svg]] {
+}
+
+docgen.languages.rust.HeldType *--> docgen.languages.rust.Ownership
+docgen.languages.rust.RustTypeFacts *--> "0..*" docgen.languages.rust.HeldType
+docgen.languages.rust.RustTypeFacts *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.ImplBlock *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.ImplBlock *--> "0..*" docgen.core.Member
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.ImplBlock
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.UseBinding
+docgen.languages.rust.Declared *--> docgen.core.ParsedFile
+docgen.languages.rust.Declared *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.Declared *--> docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.Declared *--> docgen.core.TypeDecl
+docgen.languages.rust.ModuleBox *--> docgen.languages.rust.TypeRef
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.Declared
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.ModuleBox
+docgen.languages.rust.CrateIndex *--> docgen.languages.rust.TypeRef
+docgen.languages.rust.ParsedItems *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.ParsedItems *--> "0..*" docgen.core.TypeDecl
+docgen.languages.rust.CodeFacts *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.RustLanguage --|> docgen.core.Language
+docgen.languages.rust.Located *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.HeldType
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.TypeLinks *--> "0..*" docgen.languages.rust.Located
+docgen.languages.rust._RelationSet *--> docgen.core.Relation
+docgen.languages.rust._RelationSet *--> docgen.languages.rust.TypeRef
+docgen.languages.rust.RustSyntaxError --|> ValueError
+docgen.languages.rust.RustSupportMissing --|> ImportError
+
+@enduml

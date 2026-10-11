@@ -1,0 +1,66 @@
+namespace docgen.languages.rust {
+class ParsedItems <<dataclass>> {
+  + declarations : TypeDecl[*]
+  + facts : RustFacts
+  + add(TypeDecl, RustTypeFacts)
+}
+class CodeFacts <<dataclass>> {
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class items <<module>> {
+  + {static} STRUCT
+  + {static} ENUM
+  + {static} TRAIT
+  + {static} IMPL
+  + {static} MODULE
+  + {static} FUNCTION_SIGNATURE
+  + {static} CONSTANT
+  + {static} STATIC
+  + {static} FUNCTIONS
+  + {static} VALUES
+  + {static} FREE_ITEMS
+  + {static} ENUM_VARIANT
+  + {static} TYPE_PARAMETER_NODES
+  + {static} ROOT_BOX_NAME
+  + {static} MODULE_BOX_SUFFIX
+  # {static} _declared_name(Node) : str
+  # {static} _code_facts(list[Node], list[UseBinding]) : CodeFacts
+  # {static} _signature_parts(Node) : list[Node | None]
+  # {static} _code_part(Node) : Node | None
+  # {static} _struct(Node, TypeVocabulary) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _variant_field_types(Node) : list[Node]
+  # {static} _enum(Node) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _trait(Node, list[UseBinding]) : tuple[TypeDecl, RustTypeFacts]
+  # {static} _type_path(Node) : Node
+  # {static} _type_parameter_names(Node) : set[str]
+  # {static} _impl_target(Node) : str | None
+  # {static} _impl(Node, list[UseBinding]) : ImplBlock | None
+  # {static} _items_of(Node, list[str], str) : list[Node]
+  # {static} _box_name(str | None, set[str]) : str
+  # {static} _module_box(list[Node], str, list[UseBinding]) : tuple[TypeDecl, RustTypeFacts]
+  + {static} parse_items(Node, str | None, list[UseBinding], TypeVocabulary) : ParsedItems
+}
+}
+
+docgen.languages.rust.ParsedItems *--> docgen.languages.rust.RustFacts
+docgen.languages.rust.ParsedItems *--> "0..*" docgen.core.TypeDecl
+docgen.languages.rust.CodeFacts *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.ParsedItems ..> docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.items ..> docgen.languages.rust.CodeFacts
+docgen.languages.rust.items ..> docgen.languages.rust.ImplBlock
+docgen.languages.rust.items ..> docgen.languages.rust.ParsedItems
+docgen.languages.rust.items ..> docgen.languages.rust.RustFacts
+docgen.languages.rust.items ..> docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.items ..> docgen.core.TypeDecl
+docgen.languages.rust.items ..> docgen.core.TypeKind
+docgen.languages.rust.items ..> docgen.oo.TypeVocabulary
+docgen.languages.rust.items ..> docgen.languages.rust.UseBinding
+docgen.languages.rust.items ..> docgen.core.Visibility
+docgen.languages.rust.items ..> docgen.languages.rust.syntax
+docgen.languages.rust.items ..> docgen.languages.rust.references
+docgen.languages.rust.items ..> docgen.languages.rust.members
+docgen.languages.rust.items ..> docgen.languages.rust.ownership
+docgen.languages.rust.items ..> docgen.languages.rust.modules
+docgen.languages.rust.items ..> docgen.oo.stereotypes

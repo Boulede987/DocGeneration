@@ -1,0 +1,5 @@
+class crate <<module>> {
+  + {static} VERSION : &str
+  + {static} version() : &str
+  + {static} tag_count() : usize
+}

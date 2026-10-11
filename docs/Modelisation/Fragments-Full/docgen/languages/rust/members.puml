@@ -1,0 +1,31 @@
+namespace docgen.languages.rust {
+class members <<module>> {
+  + {static} FUNCTION
+  + {static} NAMED_FIELDS
+  + {static} FIELD_DECLARATION
+  + {static} PARAMETER
+  + {static} SELF_PARAMETER
+  + {static} VISIBILITY
+  + {static} NOT_FIELD_TYPES
+  + {static} PUBLIC
+  + {static} MODULE_PRIVATE
+  + {static} visibility_of_modifier(Node | None) : Visibility
+  + {static} visibility(Node) : Visibility
+  # {static} _field_member(str, Node, Visibility, TypeVocabulary) : Member
+  # {static} _named_fields(Node, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  # {static} _tuple_fields(Node, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  + {static} fields(Node | None, TypeVocabulary) : tuple[list[Member], list[HeldType]]
+  # {static} _is_static(Node) : bool
+  + {static} function_member(Node, Visibility) : Member
+  + {static} value_member(Node, Visibility) : Member
+  + {static} free_item_member(Node) : Member
+}
+}
+
+docgen.languages.rust.members ..> docgen.languages.rust.HeldType
+docgen.languages.rust.members ..> docgen.core.Member
+docgen.languages.rust.members ..> docgen.core.MemberKind
+docgen.languages.rust.members ..> docgen.oo.TypeVocabulary
+docgen.languages.rust.members ..> docgen.core.Visibility
+docgen.languages.rust.members ..> docgen.languages.rust.syntax
+docgen.languages.rust.members ..> docgen.languages.rust.ownership
