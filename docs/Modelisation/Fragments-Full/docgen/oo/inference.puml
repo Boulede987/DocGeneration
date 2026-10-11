@@ -28,3 +28,6 @@ docgen.oo.inference ..> docgen.core.RelationLevel
 docgen.oo.inference ..> docgen.oo.RelationPolicy
 docgen.oo.inference ..> docgen.oo.TypeFacts
 docgen.oo.inference ..> docgen.oo.TypeVocabulary
+docgen.oo.RelationPolicy ..> docgen.core.relations
+docgen.oo.inference ..> docgen.core.model
+docgen.oo.inference ..> docgen.core.relations

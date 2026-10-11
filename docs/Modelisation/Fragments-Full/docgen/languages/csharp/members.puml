@@ -52,3 +52,7 @@ docgen.languages.csharp.members ..> docgen.core.MemberKind
 docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
 docgen.languages.csharp.members ..> docgen.oo.TypeVocabulary
 docgen.languages.csharp.members ..> docgen.core.Visibility
+docgen.languages.csharp.members ..> docgen.clike.text_scan
+docgen.languages.csharp.members ..> docgen.clike.modifiers
+docgen.languages.csharp.members ..> docgen.core.model
+docgen.languages.csharp.members ..> docgen.clike.body_scan

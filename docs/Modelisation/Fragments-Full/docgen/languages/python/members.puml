@@ -52,3 +52,4 @@ docgen.languages.python.members ..> docgen.languages.python.Attribute
 docgen.languages.python.members ..> docgen.core.Member
 docgen.languages.python.members ..> docgen.core.MemberKind
 docgen.languages.python.members ..> docgen.oo.TypeVocabulary
+docgen.languages.python.members ..> docgen.languages.python.syntax

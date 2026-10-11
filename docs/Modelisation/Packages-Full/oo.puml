@@ -126,8 +126,13 @@ class docgen.core.RelationLevel <<external>> [[core.svg]] {
 }
 class docgen.core.ResolutionHints <<external>> [[core.svg]] {
 }
+class docgen.core.model <<external>> [[core.svg]] {
+}
+class docgen.core.relations <<external>> [[core.svg]] {
+}
 
 docgen.oo.TypeFacts *--> "0..*" docgen.oo.FieldUsage
+docgen.oo.TypeFacts ..> docgen.core.model
 docgen.oo.RelationPolicy ..> docgen.oo.FieldFacts
 docgen.oo.RelationPolicy ..> docgen.core.RelationLevel
 docgen.oo.inference ..> docgen.oo.FieldFacts
@@ -136,6 +141,9 @@ docgen.oo.inference ..> docgen.core.RelationLevel
 docgen.oo.inference ..> docgen.oo.RelationPolicy
 docgen.oo.inference ..> docgen.oo.TypeFacts
 docgen.oo.inference ..> docgen.oo.TypeVocabulary
+docgen.oo.RelationPolicy ..> docgen.core.relations
+docgen.oo.inference ..> docgen.core.model
+docgen.oo.inference ..> docgen.core.relations
 docgen.oo.ObjectOrientedLanguage --|> docgen.core.Language
 docgen.oo.ObjectOrientedLanguage *--> docgen.oo.TypeVocabulary
 docgen.oo.ObjectOrientedLanguage ..> docgen.core.ParsedFile
@@ -144,5 +152,7 @@ docgen.oo.ObjectOrientedLanguage ..> docgen.core.Relation
 docgen.oo.ObjectOrientedLanguage ..> docgen.oo.RelationPolicy
 docgen.oo.language ..> docgen.core.ParsedFile
 docgen.oo.language ..> docgen.core.ResolutionHints
+docgen.oo.ObjectOrientedLanguage ..> docgen.oo.inference
+docgen.oo.TypeVocabulary ..> docgen.core.model
 
 @enduml

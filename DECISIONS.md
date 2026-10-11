@@ -1,5 +1,30 @@
 # Decisions
 
+## 2026-10-11 — Python draws dependencies on other modules' functions; relations may name their target's package
+
+**Context:** Python modules mostly call each other's functions, which were
+not drawn: a functions-only module stayed unconnected. Module boxes share
+names across packages (`language`, `vocabulary`), and the core resolved a
+relation's target by name with the file's own declarations first, so
+`python/language.py` using `oo/language.py` pointed at itself.
+
+**Decision:** Python records, per class or module box, the imported module
+members its code reads; its `link` draws one weak dependency to the
+defining module's box when that box declares the name (flow:
+`docs/Algorithms/module_dependencies.puml`). The arrow starts at the
+declaration whose code uses the name (chosen by the user). `Relation` gets
+an optional `target_package`: a language that knows where the target is
+declared skips the name lookup. Per-file diagrams keep packages per
+relation instead of per name. Java, C# and Unity output unchanged.
+
+**Alternatives considered:**
+- Pinning the package through the file's import hints — rejected: the
+  file's own declarations win over hints, so same-named boxes still clash.
+- Dropping or renaming clashing arrows — rejected by the user: loses or
+  misnames real dependencies.
+- Drawing every arrow from the file's module box — rejected by the user:
+  files with only classes have no box.
+
 ## 2026-10-11 — The core is the UML model; relation inference belongs to languages
 
 **Context:** Adding Python took 4 core changes, and a Rust design would have

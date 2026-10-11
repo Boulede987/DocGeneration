@@ -121,15 +121,21 @@ class cli <<module>> {
   # {static} _print_summary(RunSummary, Path, str)
   + {static} main(Language, list[str] | None, bool) : int
 }
+class EndPackages <<dataclass>> {
+  + source : str | None
+  + target : str | None
+}
 class FileDiagram <<dataclass>> {
   + stem : str
   + package : str | None
   + inner_lines : str[*]
   + relations : Relation[*]
-  + name_packages : dict[str, str | None]
+  + end_packages : dict[Relation, EndPackages]
   + base_relations() : list[Relation]
   + full_relations() : list[Relation]
-  + qualified_name(str) : str
+  + target_package(Relation) : str | None
+  + qualified_source(Relation) : str
+  + qualified_target(Relation) : str
   + render_relations(list[Relation]) : list[str]
 }
 class FileOutputPaths <<dataclass>> {
@@ -145,6 +151,7 @@ class file_diagram <<module>> {
   + {static} BASE_FRAGMENT_DIR
   + {static} FULL_DIAGRAM_DIR
   + {static} FULL_FRAGMENT_DIR
+  # {static} _qualified(str, str | None) : str
   # {static} _file_body(FileDiagram, list[Relation]) : list[str]
   + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
 }
@@ -271,6 +278,7 @@ class pipeline <<module>> {
   # {static} _is_excluded(SourceFile, Sequence[str]) : bool
   + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
   + {static} build_file_diagram(ParsedFile, list[Relation], ProjectIndex, Language) : FileDiagram
+  # {static} _end_packages(Relation, ParsedFile, ProjectIndex, Language) : EndPackages
   # {static} _parse_source(Language, SourceFile) : ParsedFile
   # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
   # {static} _write_diagrams(Language, dict[SourceFile, ParsedFile], Mapping[ParsedFile, list[Relation]], Project, Path, RunSummary) : list[FileDiagram]
@@ -292,12 +300,16 @@ enum RelationLevel <<enum>> {
   STRONG
   WEAK
 }
+enum PackageLookup <<enum>> {
+  BY_NAME
+}
 class Relation <<dataclass>> {
   + source : str
   + arrow : str
   + target : str
   + level : RelationLevel
   + multiplicity : str | None
+  + target_package : str | None | PackageLookup
   + render(str, str) : str
 }
 class relations <<module>> {
@@ -541,6 +553,14 @@ class vocabulary <<module>> {
 }
 }
 namespace docgen.languages.python {
+class PythonTypeFacts <<dataclass>> {
+  + module_uses : ModuleUse[*]
+  + module_path : str | None
+}
+class ModuleIdentity <<dataclass>> {
+  + box_name : str
+  + module_path : str | None
+}
 class declarations <<module>> {
   + {static} ENUM_BASES
   + {static} PROTOCOL_BASE
@@ -557,9 +577,9 @@ class declarations <<module>> {
   # {static} _enum_member_names(ast.stmt) : list[str]
   # {static} _enum_values(ast.ClassDef) : list[str]
   # {static} _stereotype(frozenset[str]) : str | None
-  # {static} _declaration(ast.ClassDef, TypeVocabulary) : DeclarationWithFacts
-  + {static} class_declarations(ast.Module, TypeVocabulary) : list[DeclarationWithFacts]
-  + {static} module_declaration(ast.Module, str, TypeVocabulary) : DeclarationWithFacts | None
+  # {static} _declaration(ast.ClassDef, TypeVocabulary, ImportedNames) : DeclarationWithFacts
+  + {static} class_declarations(ast.Module, TypeVocabulary, ImportedNames) : list[DeclarationWithFacts]
+  + {static} module_declaration(ast.Module, ModuleIdentity, TypeVocabulary, ImportedNames) : DeclarationWithFacts | None
 }
 class PythonLanguage {
   + {static} name
@@ -569,9 +589,9 @@ class PythonLanguage {
   + {static} vocabulary
   + {static} hidden_bases
   + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  + link(Project[ObjectOrientedFacts]) : Mapping[ParsedFile[ObjectOrientedFacts], list[Relation]]
 }
 class language <<module>> {
-  + {static} PACKAGE_MODULE_STEM
   + {static} MODULE_BOX_SUFFIX
   + {static} HIDDEN_BASES
   # {static} _module_name(SourceText, set[str]) : str
@@ -623,13 +643,40 @@ class members <<module>> {
   + {static} module_members(ast.Module, TypeVocabulary) : list[Member]
   + {static} has_abstract_method(ast.ClassDef) : bool
 }
+class ModuleBox <<dataclass>> {
+  + name : str
+  + package : str | None
+  + member_names : str[*]
+}
+class module_dependencies <<module>> {
+  # {static} _declarations_with_facts(ParsedFile[ObjectOrientedFacts]) : list[tuple[TypeDecl, PythonTypeFacts]]
+  + {static} module_boxes(Project[ObjectOrientedFacts]) : dict[str, ModuleBox]
+  # {static} _used_box(ModuleUse, str | None, dict[str, ModuleBox]) : ModuleBox | None
+  + {static} module_dependencies(ParsedFile[ObjectOrientedFacts], dict[str, ModuleBox]) : list[Relation]
+}
+class ModuleUse <<dataclass>> {
+  + module_path : str
+  + name : str
+}
+class ImportedNames <<dataclass>> {
+  + members : dict[str, ModuleUse]
+  + modules : dict[str, str]
+}
 class modules <<module>> {
   + {static} PACKAGE_SEPARATOR
+  + {static} PACKAGE_MODULE_STEM
+  + {static} STAR_IMPORT
   + {static} package_of(Path) : str | None
+  + {static} module_path_of(Path) : str | None
   # {static} _absolute_module(ast.ImportFrom, str | None) : str | None
   # {static} _module_and_parent(str) : set[str]
   # {static} _imported_paths(ast.AST, str | None) : set[str]
   + {static} import_hints(ast.Module, str | None) : ResolutionHints
+  # {static} _prefixes(str) : list[str]
+  # {static} _bind_import(ast.Import, ImportedNames)
+  # {static} _bind_import_from(ast.ImportFrom, str | None, ImportedNames)
+  # {static} _imports_in_source_order(ast.Module) : list[ast.Import | ast.ImportFrom]
+  + {static} imported_names(ast.Module, str | None) : ImportedNames
 }
 class _UnquoteForwardReferences {
   + visit_Constant(ast.Constant) : ast.AST
@@ -661,6 +708,10 @@ class usages <<module>> {
   # {static} _mentioned_in(Iterable[ast.AST]) : list[str]
   + {static} body_types(ast.ClassDef) : list[str]
   + {static} module_body_types(ast.Module) : list[str]
+  + {static} module_scopes(ast.Module) : list[ast.AST]
+  # {static} _dotted_name(ast.expr) : str | None
+  # {static} _module_use(ast.AST, ImportedNames) : ModuleUse | None
+  + {static} module_uses(Iterable[ast.AST], ImportedNames) : list[ModuleUse]
   + {static} newed_types(ast.ClassDef) : list[str]
 }
 class vocabulary <<module>> {
@@ -771,6 +822,7 @@ class vocabulary <<module>> {
 }
 }
 
+docgen.core.FileDiagram *--> docgen.core.EndPackages
 docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
 docgen.core.Member *--> docgen.core.MemberKind
 docgen.core.Member *--> docgen.core.Visibility
@@ -781,12 +833,16 @@ docgen.core.ParsedFile *--> "0..*" docgen.core.TypeDecl
 docgen.core._PackageIndex *--> docgen.core.FileDiagram
 docgen.core.Project *--> "0..*" docgen.core.ParsedFile
 docgen.core.Project *--> docgen.core.ProjectIndex
+docgen.core.Relation *--> docgen.core.PackageLookup
 docgen.core.Relation *--> docgen.core.RelationLevel
 docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.java.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.python.PythonTypeFacts --|> docgen.oo.TypeFacts
+docgen.languages.python.PythonTypeFacts *--> "0..*" docgen.languages.python.ModuleUse
 docgen.languages.python.PythonLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.python.ImportedNames *--> docgen.languages.python.ModuleUse
 docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
 docgen.languages.unity.UnityRelationPolicy --|> docgen.oo.RelationPolicy
 docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage

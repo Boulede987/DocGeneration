@@ -18,3 +18,5 @@ class vocabulary <<module>> {
   # {static} _NULLABLE_MARK
 }
 }
+
+docgen.oo.TypeVocabulary ..> docgen.core.model

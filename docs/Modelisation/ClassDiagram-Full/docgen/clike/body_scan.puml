@@ -45,5 +45,6 @@ class body_scan <<module>> {
 }
 }
 
+docgen.clike.body_scan ..> docgen.clike.text_scan
 
 @enduml

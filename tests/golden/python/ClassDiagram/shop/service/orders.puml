@@ -51,6 +51,7 @@ class OrderService {
   + {static} total(list[Product]) : Money
   + {static} create(Repository) : OrderService
   # _check(Product) : bool
+  + quote(list[Product]) : Money
 }
 class Order {
   + product : Product

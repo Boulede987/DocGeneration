@@ -1,0 +1,13 @@
+namespace docgen.languages.python {
+class ModuleBox <<dataclass>> {
+  + name : str
+  + package : str | None
+  + member_names : str[*]
+}
+class module_dependencies <<module>> {
+  # {static} _declarations_with_facts(ParsedFile[ObjectOrientedFacts]) : list[tuple[TypeDecl, PythonTypeFacts]]
+  + {static} module_boxes(Project[ObjectOrientedFacts]) : dict[str, ModuleBox]
+  # {static} _used_box(ModuleUse, str | None, dict[str, ModuleBox]) : ModuleBox | None
+  + {static} module_dependencies(ParsedFile[ObjectOrientedFacts], dict[str, ModuleBox]) : list[Relation]
+}
+}

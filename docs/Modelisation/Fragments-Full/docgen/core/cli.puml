@@ -24,3 +24,4 @@ class cli <<module>> {
 docgen.core.cli ..> docgen.core.CommandLine
 docgen.core.cli ..> docgen.core.Language
 docgen.core.cli ..> docgen.core.RunSummary
+docgen.core.cli ..> docgen.core.pipeline

@@ -33,15 +33,21 @@ skinparam class {
 }
 
 namespace docgen.core {
+class EndPackages <<dataclass>> {
+  + source : str | None
+  + target : str | None
+}
 class FileDiagram <<dataclass>> {
   + stem : str
   + package : str | None
   + inner_lines : str[*]
   + relations : Relation[*]
-  + name_packages : dict[str, str | None]
+  + end_packages : dict[Relation, EndPackages]
   + base_relations() : list[Relation]
   + full_relations() : list[Relation]
-  + qualified_name(str) : str
+  + target_package(Relation) : str | None
+  + qualified_source(Relation) : str
+  + qualified_target(Relation) : str
   + render_relations(list[Relation]) : list[str]
 }
 class FileOutputPaths <<dataclass>> {
@@ -57,15 +63,18 @@ class file_diagram <<module>> {
   + {static} BASE_FRAGMENT_DIR
   + {static} FULL_DIAGRAM_DIR
   + {static} FULL_FRAGMENT_DIR
+  # {static} _qualified(str, str | None) : str
   # {static} _file_body(FileDiagram, list[Relation]) : list[str]
   + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
 }
 }
 
+docgen.core.FileDiagram *--> docgen.core.EndPackages
 docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
 docgen.core.FileDiagram ..> docgen.core.RelationLevel
 docgen.core.file_diagram ..> docgen.core.FileDiagram
 docgen.core.file_diagram ..> docgen.core.FileOutputPaths
 docgen.core.file_diagram ..> docgen.core.Relation
+docgen.core.file_diagram ..> docgen.core.puml
 
 @enduml

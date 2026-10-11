@@ -105,12 +105,21 @@ module's package is its folder path relative to that root
   under `if`/`try` (e.g. `if TYPE_CHECKING:`) are left out.
 - Absolute, relative and module imports resolve referenced classes to
   their package.
+- Using another project module's function or constant (`from .x import f`
+  then `f()`, `from . import x` then `x.f()`, `import a.x [as y]` then
+  `a.x.f()` / `y.f()`) draws a dependency from the class or module box
+  whose code uses it to that module's box (full views only).
 
 Caveats:
 - No type inference beyond annotations, constructor calls and annotated
   `__init__` parameters: an unannotated value has no type and no relation.
-- Calls between functions or modules are not drawn, only uses of classes:
-  a module that uses no class stays unconnected.
+- Calls to methods of objects (`self.repository.find()`) are not drawn
+  without a typed attribute: only imported module names and classes are
+  recognized. Uses of the standard library and third-party modules draw
+  nothing.
+- Scopes are not told apart: a parameter or local variable named like an
+  imported function (`def go(helper): helper()`) still counts as a use of
+  that function.
 - Typed public attributes (no underscore) count as composition, like public
   fields in Java/C#.
 - Capitalization is the only evidence that a callee is a class: a

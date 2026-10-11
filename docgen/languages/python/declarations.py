@@ -1,7 +1,8 @@
 """Python classes and modules -> UML declarations, each with the facts
-relation inference needs (bases, usages)."""
+relation inference needs (bases, usages, other modules' names used)."""
 
 import ast
+from dataclasses import dataclass, field
 from typing import Iterator
 
 from docgen.core.model import TypeDecl, TypeKind
@@ -12,6 +13,7 @@ from docgen.oo.vocabulary import TypeVocabulary
 
 from . import usages
 from .members import has_abstract_method, members_of, module_members
+from .modules import ImportedNames, ModuleUse
 from .syntax import decorator_names, simple_name
 from .vocabulary import DATACLASS_STYLE
 
@@ -23,6 +25,21 @@ OBJECT_BASE = "object"
 DATACLASS_MODIFIER = "dataclass"
 DATACLASS_STEREOTYPE = f"<<{DATACLASS_STYLE.stereotype}>>"
 _ENUM_CONFIGURATION_PREFIX = "_"
+
+
+@dataclass
+class PythonTypeFacts(TypeFacts):
+    """module_uses: other modules' top-level names the declaration's code
+    reads. module_path: set on a module box only, the path Python imports
+    its module by."""
+    module_uses: list[ModuleUse] = field(default_factory=list)
+    module_path: str | None = None
+
+
+@dataclass(frozen=True)
+class ModuleIdentity:
+    box_name: str
+    module_path: str | None
 
 
 def _classes_in(statements: list[ast.stmt]) -> Iterator[ast.ClassDef]:
@@ -49,7 +66,7 @@ def _kind(bases: list[str]) -> TypeKind:
 
 
 def _modifiers(class_node: ast.ClassDef, bases: list[str]) -> frozenset[str]:
-    modifiers = set()
+    modifiers: set[str] = set()
     if ABSTRACT_BASE in bases or has_abstract_method(class_node):
         modifiers.add(ABSTRACT_MODIFIER)
     if DATACLASS_MODIFIER in decorator_names(class_node):
@@ -80,7 +97,7 @@ def _stereotype(modifiers: frozenset[str]) -> str | None:
     return DATACLASS_STEREOTYPE if DATACLASS_MODIFIER in modifiers else class_stereotype(modifiers)
 
 
-def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> DeclarationWithFacts:
+def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary, imported: ImportedNames) -> DeclarationWithFacts:
     """Bases are kept as declared, first one as base class, including the
     ones never drawn (object, ABC, Generic...). Enums and protocols get no
     usage facts: what they mention is not a use."""
@@ -90,7 +107,7 @@ def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> Declar
     declaration = TypeDecl(
         name=class_node.name, kind=kind, stereotype=_stereotype(modifiers), is_abstract=is_abstract(modifiers),
     )
-    facts = TypeFacts(name=class_node.name, base_class=bases[0] if bases else None, additional_bases=bases[1:])
+    facts = PythonTypeFacts(name=class_node.name, base_class=bases[0] if bases else None, additional_bases=bases[1:])
     if kind is TypeKind.ENUM:
         declaration.enum_values = _enum_values(class_node)
         return declaration, facts
@@ -101,14 +118,19 @@ def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> Declar
     facts.signature_types = usages.signature_types(class_node)
     facts.body_types = usages.body_types(class_node)
     facts.newed_types = usages.newed_types(class_node)
+    facts.module_uses = usages.module_uses([class_node], imported)
     return declaration, facts
 
 
-def class_declarations(tree: ast.Module, vocabulary: TypeVocabulary) -> list[DeclarationWithFacts]:
-    return [_declaration(class_node, vocabulary) for class_node in _classes_in(tree.body)]
+def class_declarations(
+    tree: ast.Module, vocabulary: TypeVocabulary, imported: ImportedNames,
+) -> list[DeclarationWithFacts]:
+    return [_declaration(class_node, vocabulary, imported) for class_node in _classes_in(tree.body)]
 
 
-def module_declaration(tree: ast.Module, name: str, vocabulary: TypeVocabulary) -> DeclarationWithFacts | None:
+def module_declaration(
+    tree: ast.Module, identity: ModuleIdentity, vocabulary: TypeVocabulary, imported: ImportedNames,
+) -> DeclarationWithFacts | None:
     """The module's free functions and variables as one <<module>> box, so
     what they use shows up as dependencies like any class's. None: nothing
     to draw (the module has only classes and imports)."""
@@ -116,10 +138,12 @@ def module_declaration(tree: ast.Module, name: str, vocabulary: TypeVocabulary) 
     if not members:
         return None
     # UML has no module classifier: a class box, told apart by its stereotype.
-    declaration = TypeDecl(name=name, kind=TypeKind.CLASS, stereotype=MODULE_STEREOTYPE, members=members)
-    facts = TypeFacts(
-        name=name,
+    declaration = TypeDecl(name=identity.box_name, kind=TypeKind.CLASS, stereotype=MODULE_STEREOTYPE, members=members)
+    facts = PythonTypeFacts(
+        name=identity.box_name,
         signature_types=usages.module_signature_types(tree),
         body_types=usages.module_body_types(tree),
+        module_uses=usages.module_uses(usages.module_scopes(tree), imported),
+        module_path=identity.module_path,
     )
     return declaration, facts

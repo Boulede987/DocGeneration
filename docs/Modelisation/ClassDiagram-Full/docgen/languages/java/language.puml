@@ -59,5 +59,11 @@ docgen.languages.java.JavaLanguage ..> docgen.oo.TypeFacts
 docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
 docgen.languages.java.language ..> docgen.core.TypeKind
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.vocabulary
+docgen.languages.java.JavaLanguage ..> docgen.oo.language
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.declarations
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.members
+docgen.languages.java.JavaLanguage ..> docgen.clike.text_scan
+docgen.languages.java.JavaLanguage ..> docgen.oo.stereotypes
 
 @enduml

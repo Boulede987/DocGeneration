@@ -58,15 +58,21 @@ class cli <<module>> {
   # {static} _print_summary(RunSummary, Path, str)
   + {static} main(Language, list[str] | None, bool) : int
 }
+class EndPackages <<dataclass>> {
+  + source : str | None
+  + target : str | None
+}
 class FileDiagram <<dataclass>> {
   + stem : str
   + package : str | None
   + inner_lines : str[*]
   + relations : Relation[*]
-  + name_packages : dict[str, str | None]
+  + end_packages : dict[Relation, EndPackages]
   + base_relations() : list[Relation]
   + full_relations() : list[Relation]
-  + qualified_name(str) : str
+  + target_package(Relation) : str | None
+  + qualified_source(Relation) : str
+  + qualified_target(Relation) : str
   + render_relations(list[Relation]) : list[str]
 }
 class FileOutputPaths <<dataclass>> {
@@ -82,6 +88,7 @@ class file_diagram <<module>> {
   + {static} BASE_FRAGMENT_DIR
   + {static} FULL_DIAGRAM_DIR
   + {static} FULL_FRAGMENT_DIR
+  # {static} _qualified(str, str | None) : str
   # {static} _file_body(FileDiagram, list[Relation]) : list[str]
   + {static} write_file_outputs(FileDiagram, FileOutputPaths, list[str])
 }
@@ -208,6 +215,7 @@ class pipeline <<module>> {
   # {static} _is_excluded(SourceFile, Sequence[str]) : bool
   + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
   + {static} build_file_diagram(ParsedFile, list[Relation], ProjectIndex, Language) : FileDiagram
+  # {static} _end_packages(Relation, ParsedFile, ProjectIndex, Language) : EndPackages
   # {static} _parse_source(Language, SourceFile) : ParsedFile
   # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
   # {static} _write_diagrams(Language, dict[SourceFile, ParsedFile], Mapping[ParsedFile, list[Relation]], Project, Path, RunSummary) : list[FileDiagram]
@@ -229,12 +237,16 @@ enum RelationLevel <<enum>> {
   STRONG
   WEAK
 }
+enum PackageLookup <<enum>> {
+  BY_NAME
+}
 class Relation <<dataclass>> {
   + source : str
   + arrow : str
   + target : str
   + level : RelationLevel
   + multiplicity : str | None
+  + target_package : str | None | PackageLookup
   + render(str, str) : str
 }
 class relations <<module>> {
@@ -285,6 +297,7 @@ class style <<module>> {
 }
 }
 
+docgen.core.FileDiagram *--> docgen.core.EndPackages
 docgen.core.FileDiagram *--> "0..*" docgen.core.Relation
 docgen.core.Member *--> docgen.core.MemberKind
 docgen.core.Member *--> docgen.core.Visibility
@@ -295,6 +308,7 @@ docgen.core.ParsedFile *--> "0..*" docgen.core.TypeDecl
 docgen.core._PackageIndex *--> docgen.core.FileDiagram
 docgen.core.Project *--> "0..*" docgen.core.ParsedFile
 docgen.core.Project *--> docgen.core.ProjectIndex
+docgen.core.Relation *--> docgen.core.PackageLookup
 docgen.core.Relation *--> docgen.core.RelationLevel
 
 @enduml

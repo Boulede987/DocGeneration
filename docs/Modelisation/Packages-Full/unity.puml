@@ -65,13 +65,23 @@ class docgen.core.RelationLevel <<external>> [[core.svg]] {
 }
 class docgen.core.StereotypeStyle <<external>> [[core.svg]] {
 }
+class docgen.core.model <<external>> [[core.svg]] {
+}
+class docgen.core.relations <<external>> [[core.svg]] {
+}
+class docgen.core.style <<external>> [[core.svg]] {
+}
 class docgen.languages.csharp.CSharpLanguage <<external>> [[csharp.svg]] {
 }
 class docgen.languages.csharp.TypeHeader <<external>> [[csharp.svg]] {
 }
+class docgen.languages.csharp.vocabulary <<external>> [[csharp.svg]] {
+}
 class docgen.oo.FieldFacts <<external>> [[oo.svg]] {
 }
 class docgen.oo.RelationPolicy <<external>> [[oo.svg]] {
+}
+class docgen.oo.language <<external>> [[oo.svg]] {
 }
 
 docgen.languages.unity.UnityRelationPolicy --|> docgen.oo.RelationPolicy
@@ -84,5 +94,12 @@ docgen.languages.unity.UnityLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
 docgen.languages.unity.language ..> docgen.core.Project
 docgen.languages.unity.language ..> docgen.core.StereotypeStyle
+docgen.languages.unity.UnityRelationPolicy ..> docgen.core.relations
+docgen.languages.unity.UnityLanguage ..> docgen.core.style
+docgen.languages.unity.UnityLanguage ..> docgen.languages.csharp.vocabulary
+docgen.languages.unity.UnityLanguage ..> docgen.oo.language
+docgen.languages.unity.language ..> docgen.oo.language
+docgen.languages.unity.language ..> docgen.core.model
+docgen.languages.unity.language ..> docgen.languages.csharp.vocabulary
 
 @enduml

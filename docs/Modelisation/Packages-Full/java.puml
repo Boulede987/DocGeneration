@@ -131,6 +131,12 @@ class vocabulary <<module>> {
   + {static} SKINPARAM_LINES
 }
 }
+class docgen.clike.body_scan <<external>> [[clike.svg]] {
+}
+class docgen.clike.modifiers <<external>> [[clike.svg]] {
+}
+class docgen.clike.text_scan <<external>> [[clike.svg]] {
+}
 class docgen.core.Member <<external>> [[core.svg]] {
 }
 class docgen.core.MemberKind <<external>> [[core.svg]] {
@@ -149,6 +155,10 @@ class docgen.core.TypeKind <<external>> [[core.svg]] {
 }
 class docgen.core.Visibility <<external>> [[core.svg]] {
 }
+class docgen.core.model <<external>> [[core.svg]] {
+}
+class docgen.core.style <<external>> [[core.svg]] {
+}
 class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
 }
 class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
@@ -157,8 +167,13 @@ class docgen.oo.TypeFacts <<external>> [[oo.svg]] {
 }
 class docgen.oo.TypeVocabulary <<external>> [[oo.svg]] {
 }
+class docgen.oo.language <<external>> [[oo.svg]] {
+}
+class docgen.oo.stereotypes <<external>> [[oo.svg]] {
+}
 
 docgen.languages.java.declarations ..> docgen.languages.java.TypeHeader
+docgen.languages.java.declarations ..> docgen.clike.text_scan
 docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.java.JavaLanguage ..> docgen.oo.FieldUsage
 docgen.languages.java.JavaLanguage ..> docgen.core.ParsedFile
@@ -169,6 +184,12 @@ docgen.languages.java.JavaLanguage ..> docgen.oo.TypeFacts
 docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
 docgen.languages.java.language ..> docgen.core.TypeKind
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.vocabulary
+docgen.languages.java.JavaLanguage ..> docgen.oo.language
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.declarations
+docgen.languages.java.JavaLanguage ..> docgen.languages.java.members
+docgen.languages.java.JavaLanguage ..> docgen.clike.text_scan
+docgen.languages.java.JavaLanguage ..> docgen.oo.stereotypes
 docgen.languages.java.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 docgen.languages.java.members ..> docgen.oo.FieldUsage
 docgen.languages.java.members ..> docgen.core.Member
@@ -176,7 +197,12 @@ docgen.languages.java.members ..> docgen.core.MemberKind
 docgen.languages.java.members ..> docgen.languages.java.MemberTypes
 docgen.languages.java.members ..> docgen.oo.TypeVocabulary
 docgen.languages.java.members ..> docgen.core.Visibility
+docgen.languages.java.members ..> docgen.clike.text_scan
+docgen.languages.java.members ..> docgen.clike.modifiers
+docgen.languages.java.members ..> docgen.core.model
+docgen.languages.java.members ..> docgen.clike.body_scan
 docgen.languages.java.vocabulary ..> docgen.core.StereotypeStyle
 docgen.languages.java.vocabulary ..> docgen.oo.TypeVocabulary
+docgen.languages.java.vocabulary ..> docgen.core.style
 
 @enduml

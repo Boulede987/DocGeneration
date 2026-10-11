@@ -53,5 +53,6 @@ class vocabulary <<module>> {
 }
 }
 
+docgen.oo.TypeVocabulary ..> docgen.core.model
 
 @enduml

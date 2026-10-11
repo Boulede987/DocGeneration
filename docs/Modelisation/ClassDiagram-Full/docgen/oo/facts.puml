@@ -52,5 +52,6 @@ class TypeFacts <<dataclass>> {
 }
 
 docgen.oo.TypeFacts *--> "0..*" docgen.oo.FieldUsage
+docgen.oo.TypeFacts ..> docgen.core.model
 
 @enduml

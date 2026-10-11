@@ -27,3 +27,10 @@ docgen.languages.csharp.CSharpLanguage ..> docgen.oo.TypeFacts
 docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
 docgen.languages.csharp.language ..> docgen.core.TypeKind
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.vocabulary
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.language
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.style
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.declarations
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.stereotypes
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.members
+docgen.languages.csharp.CSharpLanguage ..> docgen.clike.text_scan
