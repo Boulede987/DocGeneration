@@ -25,6 +25,8 @@ UML_KINDS = {"CLASS", "INTERFACE", "ENUM"}
 TOY_VIEWS_DIR = "Modules"
 FULL_SUFFIX = "-Full"
 FULL_DIAGRAM_DIR = "ClassDiagram-Full"
+# Rust takes the other route: its own relations, no docgen.oo base class.
+OBJECT_ORIENTED_LANGUAGES = ("java", "csharp", "unity", "python")
 
 
 def _source_modules() -> list[Path]:
@@ -95,7 +97,7 @@ def _toy_full_diagram(toy_output: Path) -> str:
 def test_registry_provides_every_supported_language():
     from docgen.languages import REGISTRY
 
-    assert {"java", "csharp", "unity", "python"} <= set(REGISTRY)
+    assert {"java", "csharp", "unity", "python", "rust"} <= set(REGISTRY)
 
 
 def test_every_registered_language_implements_the_language_interface():
@@ -192,7 +194,7 @@ def test_object_oriented_languages_use_the_shared_toolkit():
     from docgen.languages import REGISTRY
     from docgen.oo.language import ObjectOrientedLanguage
 
-    offenders = [name for name, language in REGISTRY.items() if not isinstance(language, ObjectOrientedLanguage)]
+    offenders = [name for name in OBJECT_ORIENTED_LANGUAGES if not isinstance(REGISTRY[name], ObjectOrientedLanguage)]
 
     assert offenders == []
 

@@ -1,0 +1,18 @@
+namespace docgen.languages.rust {
+class references <<module>> {
+  + {static} PATH_EXPRESSION
+  + {static} CALL_EXPRESSION
+  + {static} IDENTIFIER
+  + {static} PATTERN_FIELD
+  + {static} CLOSURE_PARAMETERS
+  # {static} _MODULE_KEYWORDS
+  # {static} _is_type_segment(str) : bool
+  # {static} _is_constant(str) : bool
+  # {static} _path_segments(Node) : list[str]
+  # {static} _type_in_path(list[str]) : str | None
+  + {static} type_names(Node | None) : list[str]
+  # {static} _pattern_names(Node) : set[str]
+  # {static} _module_path_use(list[str]) : ItemUse | None
+  + {static} item_uses(Node | None, list[UseBinding]) : list[ItemUse]
+}
+}

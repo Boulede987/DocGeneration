@@ -1,0 +1,57 @@
+@startuml ownership
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class ownership <<module>> {
+  + {static} SHARING_WRAPPERS
+  + {static} COLLECTION_WRAPPERS
+  + {static} PASS_THROUGH_WRAPPERS
+  + {static} STANDARD_WRAPPERS
+  + {static} FUNCTION_TYPE
+  + {static} REFERENCE_NODES
+  + {static} SEQUENCE_NODES
+  + {static} GENERIC_TYPE
+  # {static} _wrapper_name(Node) : str
+  # {static} _held_in_generic(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_types_of(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_in(list[Node], Ownership, bool) : list[HeldType]
+  + {static} held_types(Node) : list[HeldType]
+}
+}
+
+docgen.languages.rust.ownership ..> docgen.languages.rust.HeldType
+docgen.languages.rust.ownership ..> docgen.languages.rust.Ownership
+docgen.languages.rust.ownership ..> docgen.languages.rust.syntax
+
+@enduml

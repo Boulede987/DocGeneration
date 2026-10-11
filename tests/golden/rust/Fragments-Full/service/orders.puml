@@ -1,0 +1,34 @@
+namespace service.orders {
+interface Repository <<interface>> {
+  + find(&str) : Option<Product>
+}
+class OrderService {
+  - products : Product[*]
+  - repository : Box<dyn Repository>
+  - labels : Tag[*]
+  - draft : Option<Draft>
+  - fallback : util::money::Currency
+  + total() : Money
+  + {static} rate() : u32
+  + best(Vec<Box<dyn PricedItem>>) : Option<Product>
+  + category() : Option<crate::model::product::Category>
+  + {static} empty() : Money
+}
+class Draft {
+  + id : u32
+  - source : Option<Box<dyn Repository>>
+}
+}
+
+service.orders.OrderService *--> "0..*" model.product.Product
+service.orders.OrderService *--> service.orders.Repository
+service.orders.OrderService *--> "0..*" model.tag.Tag
+service.orders.OrderService *--> service.orders.Draft
+service.orders.OrderService *--> util.money.Currency
+service.orders.Draft *--> service.orders.Repository
+service.orders.Repository ..> model.product.Product
+service.orders.OrderService ..> util.money.Money
+service.orders.OrderService ..> model.product.Priced
+service.orders.OrderService ..> model.product.Category
+service.orders.OrderService ..> util.pricing.pricing
+service.orders.OrderService ..> util.money.money

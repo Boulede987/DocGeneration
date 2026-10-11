@@ -8,4 +8,5 @@ docgen.languages.languages ..> docgen.languages.csharp.CSharpLanguage
 docgen.languages.languages ..> docgen.languages.java.JavaLanguage
 docgen.languages.languages ..> docgen.core.Language
 docgen.languages.languages ..> docgen.languages.python.PythonLanguage
+docgen.languages.languages ..> docgen.languages.rust.RustLanguage
 docgen.languages.languages ..> docgen.languages.unity.UnityLanguage

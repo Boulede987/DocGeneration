@@ -1,0 +1,74 @@
+@startuml syntax
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class RustSyntaxError {
+}
+class RustSupportMissing {
+}
+class syntax <<module>> {
+  + {static} SOURCE_ENCODING
+  + {static} INSTALL_HINT
+  + {static} PATH_SEPARATOR
+  + {static} TYPE_ARGUMENTS
+  + {static} ERROR_NODE
+  + {static} NAMED_TYPE_NODES
+  + {static} SELF_TYPE
+  + {static} ATTRIBUTE
+  + {static} COMMENTS
+  # {static} _TEST_ONLY
+  # {static} _FIRST_LINE_NUMBER
+  # {static} _LIFETIME_BINDER
+  # {static} _LIFETIME_BOUND
+  # {static} _LIFETIME_ARGUMENT
+  # {static} _LIFETIME
+  # {static} _EMPTY_ARGUMENTS
+  # {static} _SPACES
+  # {static} _parser() : Parser
+  # {static} _first_error(Node) : Node | None
+  + {static} parse_tree(str) : Node
+  + {static} is_test_only(Node) : bool
+  + {static} node_text(Node) : str
+  + {static} display_text(Node) : str
+  + {static} without_type_arguments(str) : str
+  + {static} field(Node, str) : Node | None
+  + {static} named_children(Node | None, str | None) : list[Node]
+  + {static} walk(Node, frozenset[str]) : Iterator[Node]
+}
+}
+
+docgen.languages.rust.RustSyntaxError --|> ValueError
+docgen.languages.rust.RustSupportMissing --|> ImportError
+
+@enduml

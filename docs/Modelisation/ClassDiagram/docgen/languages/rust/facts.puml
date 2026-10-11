@@ -1,0 +1,90 @@
+@startuml facts
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+enum Ownership <<enum>> {
+  OWNED
+  SHARED
+}
+class HeldType <<dataclass>> {
+  + name : str
+  + ownership : Ownership
+  + is_collection : bool
+}
+class ItemUse <<dataclass>> {
+  + module_path : str | None
+  + name : str
+}
+class UseBinding <<dataclass>> {
+  + local_name : str
+  + path : tuple[str, ...]
+  + is_glob : bool
+  + scope : tuple[str, ...]
+}
+class RustTypeFacts <<dataclass>> {
+  + name : str
+  + fields : HeldType[*]
+  + supertraits : str[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class ImplBlock <<dataclass>> {
+  + target : str
+  + trait : str | None
+  + members : Member[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + item_uses : ItemUse[*]
+}
+class RustFacts <<dataclass>> {
+  + module_path : str | None
+  + types : RustTypeFacts[*]
+  + impl_blocks : ImplBlock[*]
+  + uses : UseBinding[*]
+  + box_name : str | None
+  + inline_modules : str[*]
+}
+}
+
+docgen.languages.rust.HeldType *--> docgen.languages.rust.Ownership
+docgen.languages.rust.RustTypeFacts *--> "0..*" docgen.languages.rust.HeldType
+docgen.languages.rust.RustTypeFacts *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.ImplBlock *--> "0..*" docgen.languages.rust.ItemUse
+docgen.languages.rust.ImplBlock *--> "0..*" docgen.core.Member
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.ImplBlock
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.RustTypeFacts
+docgen.languages.rust.RustFacts *--> "0..*" docgen.languages.rust.UseBinding
+
+@enduml

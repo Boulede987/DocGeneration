@@ -1,0 +1,157 @@
+@startuml _project
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+class crate <<module>> {
+  + {static} VERSION : &str
+  + {static} version() : &str
+  + {static} tag_count() : usize
+}
+namespace model.product {
+interface Describe <<interface>> {
+  + describe() : String
+}
+interface Priced <<interface>> {
+  + price() : Money
+  + currency() : Currency
+}
+class Product {
+  + name : String
+  - price : Money
+  - tags : Tag[*]
+  ~ attributes : HashMap<String, String>
+  - category : Option<Box<Category>>
+  - marker : Rc<Marker>
+  ~ code : u32
+  + {static} MAX_TAGS : usize
+  + {static} new(&str, Money) : Self
+  + tag_count() : usize
+  - rename(String)
+  + describe() : String
+  + price() : Money
+  + discounted(u32) : Money
+}
+class Category {
+  + label : String
+  - parent : Option<Weak<Category>>
+  - secret : u8
+}
+class View {
+  + product : &Product
+}
+class Wrapper<T> {
+  + inner : T
+  + get() : &T
+}
+class Sku {
+  + 0 : u32
+  - 1 : String
+}
+class Marker {
+}
+enum Status <<enum>> {
+  Draft
+  Published
+  Archived
+  Tagged
+}
+class Hooks {
+  + on_change : fn(Tag) -> Sku
+  + callback : Box<dyn Fn(Wrapper<u8>)>
+}
+}
+namespace model.tag {
+class Tag {
+  + label : String
+}
+}
+namespace service.billing {
+class Billing {
+  + {static} local(u32) : u32
+}
+}
+namespace service.orders {
+interface Repository <<interface>> {
+  + find(&str) : Option<Product>
+}
+class OrderService {
+  - products : Product[*]
+  - repository : Box<dyn Repository>
+  - labels : Tag[*]
+  - draft : Option<Draft>
+  - fallback : util::money::Currency
+  + total() : Money
+  + {static} rate() : u32
+  + best(Vec<Box<dyn PricedItem>>) : Option<Product>
+  + category() : Option<crate::model::product::Category>
+  + {static} empty() : Money
+}
+class Draft {
+  + id : u32
+  - source : Option<Box<dyn Repository>>
+}
+}
+namespace util.money {
+enum Currency <<enum>> {
+  Eur
+  Usd
+}
+class Money {
+  + cents : i64
+  + currency : Currency
+}
+class money <<module>> {
+  + {static} zero() : Money
+}
+}
+namespace util.pricing {
+class pricing <<module>> {
+  + {static} DEFAULT_RATE : u32
+  - {static} COUNTER : u32
+  + {static} total(&[Product]) : Money
+  - {static} round(i64) : i64
+}
+}
+
+model.product.Priced --|> model.product.Describe
+model.product.Product ..|> model.product.Describe
+model.product.Product ..|> model.product.Priced
+model.product.Product *--> util.money.Money
+model.product.Product *--> "0..*" model.tag.Tag
+model.product.Product *--> model.product.Category
+model.product.Status *--> model.tag.Tag
+service.orders.OrderService *--> "0..*" model.product.Product
+service.orders.OrderService *--> service.orders.Repository
+service.orders.OrderService *--> "0..*" model.tag.Tag
+service.orders.OrderService *--> service.orders.Draft
+service.orders.OrderService *--> util.money.Currency
+service.orders.Draft *--> service.orders.Repository
+util.money.Money *--> util.money.Currency
+
+@enduml

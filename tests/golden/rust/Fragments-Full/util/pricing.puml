@@ -1,0 +1,12 @@
+namespace util.pricing {
+class pricing <<module>> {
+  + {static} DEFAULT_RATE : u32
+  - {static} COUNTER : u32
+  + {static} total(&[Product]) : Money
+  - {static} round(i64) : i64
+}
+}
+
+util.pricing.pricing ..> model.product.Product
+util.pricing.pricing ..> util.money.Money
+util.pricing.pricing ..> util.money.Currency

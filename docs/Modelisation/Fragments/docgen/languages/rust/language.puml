@@ -1,0 +1,13 @@
+namespace docgen.languages.rust {
+class RustLanguage {
+  + {static} name
+  + {static} source_suffix
+  + {static} views_dir
+  + {static} skinparam_lines
+  + {static} vocabulary
+  + parse_file(SourceText) : ParsedFile[RustFacts]
+  + link(Project[RustFacts]) : Mapping[ParsedFile[RustFacts], list[Relation]]
+}
+}
+
+docgen.languages.rust.RustLanguage --|> docgen.core.Language

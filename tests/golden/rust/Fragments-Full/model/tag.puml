@@ -1,0 +1,5 @@
+namespace model.tag {
+class Tag {
+  + label : String
+}
+}

@@ -1,0 +1,10 @@
+namespace docgen.languages.rust {
+class vocabulary <<module>> {
+  + {static} NON_MAP_COLLECTIONS
+  + {static} RUST_VOCABULARY : TypeVocabulary
+  + {static} SKINPARAM_LINES
+}
+}
+
+docgen.languages.rust.vocabulary ..> docgen.oo.TypeVocabulary
+docgen.languages.rust.vocabulary ..> docgen.core.style

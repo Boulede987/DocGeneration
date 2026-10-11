@@ -16,7 +16,9 @@ Two routes:
 - **Own route**: for languages with other rules (ownership, traits,
   impl blocks...). You implement the core contract directly and compute your
   own relations, reusing any toolkit piece that fits.
-  `tests/toy_language.py` is a complete example in about 120 lines.
+  `tests/toy_language.py` is a complete example in about 120 lines;
+  `docgen/languages/rust/` is the real one (impl blocks merged across
+  files, ownership-based relations, its own name resolution).
 
 ## Checklist (both routes)
 

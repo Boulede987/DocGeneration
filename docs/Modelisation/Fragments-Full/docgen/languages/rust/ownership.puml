@@ -1,0 +1,21 @@
+namespace docgen.languages.rust {
+class ownership <<module>> {
+  + {static} SHARING_WRAPPERS
+  + {static} COLLECTION_WRAPPERS
+  + {static} PASS_THROUGH_WRAPPERS
+  + {static} STANDARD_WRAPPERS
+  + {static} FUNCTION_TYPE
+  + {static} REFERENCE_NODES
+  + {static} SEQUENCE_NODES
+  + {static} GENERIC_TYPE
+  # {static} _wrapper_name(Node) : str
+  # {static} _held_in_generic(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_types_of(Node, Ownership, bool) : list[HeldType]
+  # {static} _held_in(list[Node], Ownership, bool) : list[HeldType]
+  + {static} held_types(Node) : list[HeldType]
+}
+}
+
+docgen.languages.rust.ownership ..> docgen.languages.rust.HeldType
+docgen.languages.rust.ownership ..> docgen.languages.rust.Ownership
+docgen.languages.rust.ownership ..> docgen.languages.rust.syntax

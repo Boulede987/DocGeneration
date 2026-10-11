@@ -1,0 +1,5 @@
+namespace service.billing {
+class Billing {
+  + {static} local(u32) : u32
+}
+}

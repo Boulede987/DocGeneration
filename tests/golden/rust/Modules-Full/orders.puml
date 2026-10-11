@@ -1,0 +1,87 @@
+@startuml orders
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace service.orders {
+interface Repository <<interface>> {
+  + find(&str) : Option<Product>
+}
+class OrderService {
+  - products : Product[*]
+  - repository : Box<dyn Repository>
+  - labels : Tag[*]
+  - draft : Option<Draft>
+  - fallback : util::money::Currency
+  + total() : Money
+  + {static} rate() : u32
+  + best(Vec<Box<dyn PricedItem>>) : Option<Product>
+  + category() : Option<crate::model::product::Category>
+  + {static} empty() : Money
+}
+class Draft {
+  + id : u32
+  - source : Option<Box<dyn Repository>>
+}
+}
+class model.product.Category <<external>> [[product.svg]] {
+}
+class model.product.Priced <<external>> [[product.svg]] {
+}
+class model.product.Product <<external>> [[product.svg]] {
+}
+class model.tag.Tag <<external>> [[tag.svg]] {
+}
+class util.money.Currency <<external>> [[money.svg]] {
+}
+class util.money.Money <<external>> [[money.svg]] {
+}
+class util.money.money <<external>> [[money.svg]] {
+}
+class util.pricing.pricing <<external>> [[pricing.svg]] {
+}
+
+service.orders.OrderService *--> "0..*" model.product.Product
+service.orders.OrderService *--> service.orders.Repository
+service.orders.OrderService *--> "0..*" model.tag.Tag
+service.orders.OrderService *--> service.orders.Draft
+service.orders.OrderService *--> util.money.Currency
+service.orders.Draft *--> service.orders.Repository
+service.orders.Repository ..> model.product.Product
+service.orders.OrderService ..> util.money.Money
+service.orders.OrderService ..> model.product.Priced
+service.orders.OrderService ..> model.product.Category
+service.orders.OrderService ..> util.pricing.pricing
+service.orders.OrderService ..> util.money.money
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml modules
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+namespace docgen.languages.rust {
+class modules <<module>> {
+  + {static} MODULE_SEPARATOR
+  + {static} CRATE_ROOT_STEMS
+  + {static} MODULE_DIRECTORY_STEM
+  + {static} CRATE
+  + {static} SELF_MODULE
+  + {static} PARENT_MODULE
+  + {static} UNNAMED_IMPORT
+  + {static} GLOB_LOCAL_NAME
+  + {static} INLINE_MODULE
+  + {static} USE_DECLARATION
+  # {static} _PATH_NODES
+  + {static} module_path_of(Path) : str | None
+  + {static} path_segments(Node) : list[str]
+  # {static} _imported_path(list[str]) : list[str]
+  # {static} _bindings(Node, list[str]) : list[UseBinding]
+  + {static} use_bindings(Node, tuple[str, ...]) : list[UseBinding]
+}
+}
+
+docgen.languages.rust.modules ..> docgen.languages.rust.UseBinding
+docgen.languages.rust.modules ..> docgen.languages.rust.syntax
+
+@enduml
