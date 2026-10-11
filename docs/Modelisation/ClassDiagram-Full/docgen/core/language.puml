@@ -38,25 +38,15 @@ abstract class Language <<abstract>> {
   + source_suffix : str
   + views_dir : str
   + skinparam_lines : str[*]
-  + vocabulary : TypeVocabulary
-  + hidden_bases : str[*]
-  + {abstract} parse_file(SourceText) : ParsedFile
+  + {abstract} parse_file(SourceText) : ParsedFile[FactsT]
+  + {abstract} link(Project[FactsT]) : Mapping[ParsedFile[FactsT], list[Relation]]
   + enclosing_packages(str | None) : list[str | None]
-  + class_stereotype(TypeDecl) : str | None
-  + relation_policy(list[ParsedFile]) : RelationPolicy
-}
-class language <<module>> {
-  + {static} ABSTRACT_STEREOTYPE
-  + {static} STATIC_STEREOTYPE
-  # {static} _KIND_STEREOTYPES
 }
 }
 
-docgen.core.Language *--> docgen.core.TypeVocabulary
 docgen.core.Language ..> docgen.core.ParsedFile
-docgen.core.Language ..> docgen.core.RelationPolicy
+docgen.core.Language ..> docgen.core.Project
+docgen.core.Language ..> docgen.core.Relation
 docgen.core.Language ..> docgen.core.SourceText
-docgen.core.Language ..> docgen.core.TypeDecl
-docgen.core.language ..> docgen.core.TypeKind
 
 @enduml

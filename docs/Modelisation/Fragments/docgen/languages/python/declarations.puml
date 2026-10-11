@@ -6,6 +6,7 @@ class declarations <<module>> {
   + {static} GENERIC_BASE
   + {static} OBJECT_BASE
   + {static} DATACLASS_MODIFIER
+  + {static} DATACLASS_STEREOTYPE
   # {static} _ENUM_CONFIGURATION_PREFIX
   # {static} _classes_in(list[ast.stmt]) : Iterator[ast.ClassDef]
   + {static} base_names(ast.ClassDef) : list[str]
@@ -13,8 +14,9 @@ class declarations <<module>> {
   # {static} _modifiers(ast.ClassDef, list[str]) : frozenset[str]
   # {static} _enum_member_names(ast.stmt) : list[str]
   # {static} _enum_values(ast.ClassDef) : list[str]
-  # {static} _declaration(ast.ClassDef, TypeVocabulary) : TypeDecl
-  + {static} class_declarations(ast.Module, TypeVocabulary) : list[TypeDecl]
-  + {static} module_declaration(ast.Module, str, TypeVocabulary) : TypeDecl | None
+  # {static} _stereotype(frozenset[str]) : str | None
+  # {static} _declaration(ast.ClassDef, TypeVocabulary) : DeclarationWithFacts
+  + {static} class_declarations(ast.Module, TypeVocabulary) : list[DeclarationWithFacts]
+  + {static} module_declaration(ast.Module, str, TypeVocabulary) : DeclarationWithFacts | None
 }
 }

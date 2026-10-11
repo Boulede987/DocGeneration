@@ -9,18 +9,23 @@ class RunSummary <<dataclass>> {
   + errors : dict[Path, str]
   + package_count : int
   + excluded : int
+  + notes : dict[Path, list[str]]
+  + link_error : str | None
+  + has_errors : bool
   + record_error(SourceFile, Exception)
 }
 class pipeline <<module>> {
   + {static} SOURCE_ENCODING
   + {static} CURRENT_FOLDER_PREFIX
+  # {static} _error_text(Exception) : str
   + {static} normalized_pattern(str) : str
   # {static} _is_excluded(SourceFile, Sequence[str]) : bool
   + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
-  # {static} _relations_of(ParsedFile, set[str], Language, RelationPolicy) : list[Relation]
-  + {static} build_file_diagram(ParsedFile, ProjectIndex, Language, RelationPolicy) : FileDiagram
+  + {static} build_file_diagram(ParsedFile, list[Relation], ProjectIndex, Language) : FileDiagram
   # {static} _parse_source(Language, SourceFile) : ParsedFile
   # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
+  # {static} _write_diagrams(Language, dict[SourceFile, ParsedFile], Mapping[ParsedFile, list[Relation]], Project, Path, RunSummary) : list[FileDiagram]
+  # {static} _link(Language, Project, RunSummary) : Mapping[ParsedFile, list[Relation]]
   + {static} run(Language, Sequence[Path], Path, Sequence[str]) : RunSummary
 }
 }
@@ -30,9 +35,9 @@ docgen.core.pipeline ..> docgen.core.FileDiagram
 docgen.core.pipeline ..> docgen.core.FileOutputPaths
 docgen.core.pipeline ..> docgen.core.Language
 docgen.core.pipeline ..> docgen.core.ParsedFile
+docgen.core.pipeline ..> docgen.core.Project
 docgen.core.pipeline ..> docgen.core.ProjectIndex
 docgen.core.pipeline ..> docgen.core.Relation
-docgen.core.pipeline ..> docgen.core.RelationPolicy
 docgen.core.pipeline ..> docgen.core.RunSummary
 docgen.core.pipeline ..> docgen.core.SourceFile
 docgen.core.pipeline ..> docgen.core.SourceText

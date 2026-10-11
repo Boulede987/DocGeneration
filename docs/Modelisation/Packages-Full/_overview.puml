@@ -48,6 +48,8 @@ package "docgen.languages.python" as docgen_languages_python [[python.svg]] {
 }
 package "docgen.languages.unity" as docgen_languages_unity [[unity.svg]] {
 }
+package "docgen.oo" as docgen_oo [[oo.svg]] {
+}
 
 docgen_clike ..> docgen_core
 docgen_languages ..> docgen_core
@@ -56,9 +58,14 @@ docgen_languages ..> docgen_languages_java
 docgen_languages ..> docgen_languages_python
 docgen_languages ..> docgen_languages_unity
 docgen_languages_csharp ..> docgen_core
+docgen_languages_csharp ..> docgen_oo
 docgen_languages_java ..> docgen_core
+docgen_languages_java ..> docgen_oo
 docgen_languages_python ..> docgen_core
+docgen_languages_python ..> docgen_oo
 docgen_languages_unity ..> docgen_core
 docgen_languages_unity ..> docgen_languages_csharp
+docgen_languages_unity ..> docgen_oo
+docgen_oo ..> docgen_core
 
 @enduml

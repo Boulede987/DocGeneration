@@ -1,14 +1,19 @@
-"""Python classes -> TypeDecl: kind, modifiers, bases, members, usages."""
+"""Python classes and modules -> UML declarations, each with the facts
+relation inference needs (bases, usages)."""
 
 import ast
 from typing import Iterator
 
-from docgen.core.model import ABSTRACT_MODIFIER, TypeDecl, TypeKind
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.core.model import TypeDecl, TypeKind
+from docgen.oo.facts import TypeFacts
+from docgen.oo.language import DeclarationWithFacts
+from docgen.oo.stereotypes import ABSTRACT_MODIFIER, MODULE_STEREOTYPE, class_stereotype, is_abstract
+from docgen.oo.vocabulary import TypeVocabulary
 
 from . import usages
 from .members import has_abstract_method, members_of, module_members
 from .syntax import decorator_names, simple_name
+from .vocabulary import DATACLASS_STYLE
 
 ENUM_BASES = frozenset({"Enum", "IntEnum", "StrEnum", "Flag", "IntFlag"})
 PROTOCOL_BASE = "Protocol"
@@ -16,6 +21,7 @@ ABSTRACT_BASE = "ABC"
 GENERIC_BASE = "Generic"
 OBJECT_BASE = "object"
 DATACLASS_MODIFIER = "dataclass"
+DATACLASS_STEREOTYPE = f"<<{DATACLASS_STYLE.stereotype}>>"
 _ENUM_CONFIGURATION_PREFIX = "_"
 
 
@@ -68,43 +74,52 @@ def _enum_values(class_node: ast.ClassDef) -> list[str]:
     return [name for name in names if not name.startswith(_ENUM_CONFIGURATION_PREFIX)]
 
 
-def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> TypeDecl:
+def _stereotype(modifiers: frozenset[str]) -> str | None:
+    """A dataclass shows <<dataclass>> even when abstract: a box has one
+    stereotype, and being a dataclass says more about how it's used."""
+    return DATACLASS_STEREOTYPE if DATACLASS_MODIFIER in modifiers else class_stereotype(modifiers)
+
+
+def _declaration(class_node: ast.ClassDef, vocabulary: TypeVocabulary) -> DeclarationWithFacts:
     """Bases are kept as declared, first one as base class, including the
-    ones never drawn (object, ABC, Generic...)."""
+    ones never drawn (object, ABC, Generic...). Enums and protocols get no
+    usage facts: what they mention is not a use."""
     bases = base_names(class_node)
+    modifiers = _modifiers(class_node, bases)
+    kind = _kind(bases)
     declaration = TypeDecl(
-        name=class_node.name,
-        kind=_kind(bases),
-        modifiers=_modifiers(class_node, bases),
-        base_class=bases[0] if bases else None,
-        additional_bases=bases[1:],
+        name=class_node.name, kind=kind, stereotype=_stereotype(modifiers), is_abstract=is_abstract(modifiers),
     )
-    if declaration.kind is TypeKind.ENUM:
+    facts = TypeFacts(name=class_node.name, base_class=bases[0] if bases else None, additional_bases=bases[1:])
+    if kind is TypeKind.ENUM:
         declaration.enum_values = _enum_values(class_node)
-        return declaration
+        return declaration, facts
     declaration.members = members_of(class_node, vocabulary)
-    declaration.field_usages = usages.field_usages(class_node)
-    declaration.signature_types = usages.signature_types(class_node)
-    declaration.body_types = usages.body_types(class_node)
-    declaration.newed_types = usages.newed_types(class_node)
-    return declaration
+    if kind is TypeKind.INTERFACE:
+        return declaration, facts
+    facts.field_usages = usages.field_usages(class_node)
+    facts.signature_types = usages.signature_types(class_node)
+    facts.body_types = usages.body_types(class_node)
+    facts.newed_types = usages.newed_types(class_node)
+    return declaration, facts
 
 
-def class_declarations(tree: ast.Module, vocabulary: TypeVocabulary) -> list[TypeDecl]:
+def class_declarations(tree: ast.Module, vocabulary: TypeVocabulary) -> list[DeclarationWithFacts]:
     return [_declaration(class_node, vocabulary) for class_node in _classes_in(tree.body)]
 
 
-def module_declaration(tree: ast.Module, name: str, vocabulary: TypeVocabulary) -> TypeDecl | None:
+def module_declaration(tree: ast.Module, name: str, vocabulary: TypeVocabulary) -> DeclarationWithFacts | None:
     """The module's free functions and variables as one <<module>> box, so
     what they use shows up as dependencies like any class's. None: nothing
     to draw (the module has only classes and imports)."""
     members = module_members(tree, vocabulary)
     if not members:
         return None
-    return TypeDecl(
+    # UML has no module classifier: a class box, told apart by its stereotype.
+    declaration = TypeDecl(name=name, kind=TypeKind.CLASS, stereotype=MODULE_STEREOTYPE, members=members)
+    facts = TypeFacts(
         name=name,
-        kind=TypeKind.MODULE,
-        members=members,
         signature_types=usages.module_signature_types(tree),
         body_types=usages.module_body_types(tree),
     )
+    return declaration, facts

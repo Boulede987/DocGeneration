@@ -1,4 +1,4 @@
-@startuml vocabulary
+@startuml language
 
 skinparam classAttributeIconSize 0
 skinparam shadowing false
@@ -32,26 +32,21 @@ skinparam class {
   BorderColor<<enum>> #C0392B
 }
 
-namespace docgen.core {
-class TypeVocabulary <<dataclass>> {
-  + primitives : str[*]
-  + collection_wrappers : str[*]
-  + type_argument_brackets : tuple[str, str]
-  + __post_init__()
-  # _wrapper(str) : str
-  + is_collection(str) : bool
-  + uml_type(str) : str
-  + type_names(str) : set[str]
+namespace docgen.oo {
+class ObjectOrientedLanguage {
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
+  + link(Project[ObjectOrientedFacts]) : Mapping[ParsedFile[ObjectOrientedFacts], list[Relation]]
 }
-class vocabulary <<module>> {
-  + {static} TYPE_PARAMETERS_END
-  # {static} _TYPE_TEXT_SEPARATORS
-  # {static} _TYPE_NAME
-  # {static} _ARRAY_SUFFIX
-  # {static} _UML_MANY_SUFFIX
-  # {static} _NULLABLE_MARK
+class language <<module>> {
+  + {static} ObjectOrientedFacts
+  + {static} DeclarationWithFacts
+  + {static} object_oriented_file(str, str | None, ResolutionHints, list[DeclarationWithFacts]) : ParsedFile[ObjectOrientedFacts]
 }
 }
 
+docgen.oo.ObjectOrientedLanguage --|> docgen.core.Language
+docgen.oo.ObjectOrientedLanguage *--> docgen.oo.TypeVocabulary
 
 @enduml

@@ -8,8 +8,9 @@ from typing import Iterator
 from docgen.clike.body_scan import instantiated_type_texts, iter_method_bodies, scan_body_types
 from docgen.clike.modifiers import has_modifier, visibility_from
 from docgen.clike.text_scan import PROPERTY_PLACEHOLDER, STATEMENT_END, flatten
-from docgen.core.model import FieldUsage, Member, MemberKind, Visibility, bare_type_name
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.core.model import Member, MemberKind, Visibility, bare_type_name
+from docgen.oo.facts import FieldUsage
+from docgen.oo.vocabulary import TypeVocabulary
 
 MODIFIERS_PATTERN = (
     r"(?P<modifiers>"

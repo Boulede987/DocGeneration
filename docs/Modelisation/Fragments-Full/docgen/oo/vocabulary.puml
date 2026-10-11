@@ -1,4 +1,4 @@
-namespace docgen.core {
+namespace docgen.oo {
 class TypeVocabulary <<dataclass>> {
   + primitives : str[*]
   + collection_wrappers : str[*]

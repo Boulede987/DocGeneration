@@ -45,10 +45,10 @@ class members <<module>> {
 }
 }
 
-docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
-docgen.languages.csharp.members ..> docgen.core.FieldUsage
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.csharp.members ..> docgen.oo.FieldUsage
 docgen.languages.csharp.members ..> docgen.core.Member
 docgen.languages.csharp.members ..> docgen.core.MemberKind
 docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
-docgen.languages.csharp.members ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.members ..> docgen.oo.TypeVocabulary
 docgen.languages.csharp.members ..> docgen.core.Visibility

@@ -1,34 +1,31 @@
 # Adding a language
 
-A language is a parser that turns one source file into the neutral model in
-`docgen/core/model.py`. Everything after parsing is shared and needs no
-change: rendering, relation classification, name resolution, per-file
-diagrams, package views, and the command line.
+The core (`docgen/core`) is a UML model plus the machinery around it:
+discovery, the pipeline, name resolution, rendering, package views and the
+command line. A language translates its source into that model: UML
+classifiers with members, and the relations between them. **No file under
+`docgen/core/` changes to add a language.**
 
-## Checklist
+Two routes:
 
-1. **Create `docgen/languages/<lang>/`** with a `language.py` defining a
-   subclass of `docgen.core.language.Language`:
+- **Object-oriented route** (`docgen/oo`): for languages whose relations
+  follow class-based rules — inheritance from bases, composition or
+  association from fields, dependencies from signatures and method bodies.
+  Java, C#, Unity and Python take it. You write a parser; the toolkit infers
+  the relations.
+- **Own route**: for languages with other rules (ownership, traits,
+  impl blocks...). You implement the core contract directly and compute your
+  own relations, reusing any toolkit piece that fits.
+  `tests/toy_language.py` is a complete example in about 120 lines.
 
-   | Class attribute | Example (Java) |
-   |---|---|
-   | `name` | `"java"` — the registry key |
-   | `source_suffix` | `".java"` |
-   | `views_dir` | `"Packages"` — folder for package-level views |
-   | `skinparam_lines` | `skinparam_lines([StereotypeStyle("record", ...)])` from `docgen.core.style` |
-   | `vocabulary` | `TypeVocabulary(primitives=..., collection_wrappers=...)`; set `type_argument_brackets=("[", "]")` if the language writes `list[Foo]` |
-   | `hidden_bases` (optional) | base classes never drawn, e.g. Unity's `MonoBehaviour` |
+## Checklist (both routes)
 
-   and implementing `parse_file(source: SourceText) -> ParsedFile`.
-   `SourceText` gives the file's text, its path relative to the source
-   root it was found under, and its stem.
-
-2. **Export it** from `docgen/languages/<lang>/__init__.py`.
-
-3. **Register it**: add one instance to the tuple in
+1. **Create `docgen/languages/<lang>/`** with a `language.py` defining the
+   language class (see the route below), and export it from its
+   `__init__.py`.
+2. **Register it**: add one instance to the tuple in
    `docgen/languages/__init__.py` (`REGISTRY`).
-
-4. **Add an entry script** at the repo root, `generate_class_diagramm_<lang>.py`:
+3. **Add an entry script** at the repo root, `generate_class_diagramm_<lang>.py`:
 
    ```python
    import sys
@@ -39,73 +36,96 @@ diagrams, package views, and the command line.
    sys.exit(main(REGISTRY["<lang>"]))
    ```
 
-5. **Add tests**: a fixture project under `tests/fixtures/<lang>/`, its
-   reviewed output under `tests/golden/<lang>/`, and a golden test in
-   `tests/test_golden_output.py`.
+4. **Add tests**: a fixture project under `tests/fixtures/<lang>/`, its
+   reviewed output under `tests/golden/<lang>/`, a golden test in
+   `tests/test_golden_output.py`, and behavior tests.
+5. **Document it** in `README.md`: how to run it, what it maps, its caveats.
 
-No file under `docgen/core/` changes.
+## The core contract
 
-## What `parse_file` must produce
+Subclass `docgen.core.language.Language[FactsT]`, where `FactsT` is whatever
+your parser keeps to compute relations later.
 
-A `ParsedFile` with:
+| Class attribute | Example |
+|---|---|
+| `name` | `"java"` — the registry key |
+| `source_suffix` | `".java"` |
+| `views_dir` | `"Packages"` — folder for package-level views |
+| `skinparam_lines` | `docgen.core.style.skinparam_lines([...])` |
 
-- `package` — the file's grouping unit (package, namespace, module path), or
-  `None`. It becomes the PlantUML namespace, so its segments must be
-  separated by `.`. It may come from the text (Java `package`, C#
-  `namespace`) or from `source.relative_path` (Python folders).
-- `decls` — one `TypeDecl` per declared type (empty when the file declares
-  none; the file is then skipped). Per kind:
-  - all kinds: `name` (may include type parameters, e.g. `Box<T>`), `kind`,
-    `modifiers` (words like `abstract`, `static`), `base_class`,
-    `additional_bases` (further superclasses, for multiple inheritance),
-    `interfaces` — type texts as written; a base must be a simple name
-    (strip a module prefix or type arguments yourself).
-  - `ENUM`: `enum_values`.
-  - `INTERFACE`: `members`.
-  - `MODULE`: a source module's free functions (static methods) and
-    constants (static fields), with `signature_types`/`body_types` so the
-    classes they use become dependencies. Drawn as `<<module>>`; add
-    `style.MODULE_STYLE` to your `kind_styles` to color it.
-  - class-like kinds (`CLASS`, `RECORD`, `STRUCT`): `members` in display
-    order, plus the usage lists relations are computed from:
-    `field_usages` (types held by fields/properties), `signature_types`
-    (method return and parameter types), `body_types` (types used inside
-    method bodies), `newed_types` (types instantiated).
-- `hints` — where the file's names come from:
-  `type_imports` for imports naming one type (`import a.b.Foo` →
-  `{"Foo": "a.b"}`), `namespace_imports` for whole-package imports
-  (C# `using a.b;`).
+Methods:
 
-`Member.type` is display text: format collection types with
-`vocabulary.uml_type()` where the language wants `Foo[*]` instead of
-`List<Foo>`; use `None` for a method shown without a return type, or a
-field whose type is unknown.
-
-Raise when a file can't be parsed (e.g. a syntax error): the pipeline
-reports that file, generates every other one, and exits with code 1.
-
-## Optional hooks
-
-Override on your `Language` subclass when the defaults don't fit:
-
-- `enclosing_packages(package)` — packages visible without an import,
-  closest first. Default: the file's own package only. C# returns every
+- `parse_file(source: SourceText) -> ParsedFile[FactsT]` — one file.
+  `source` gives the text, the path relative to its source root, and the
+  stem. Raise when the text can't be parsed: only that file fails, and the
+  run exits with code 1.
+- `link(project: Project[FactsT]) -> Mapping[ParsedFile, list[Relation]]` —
+  once every file is parsed: each file's relations; a file left out has
+  none. It may also complete declarations across files (methods declared
+  away from their type) and add `notes` to files (non-fatal warnings,
+  printed per file). If it raises, every diagram is still written, without
+  relations, and the run exits with code 1.
+- `enclosing_packages(package)` (optional) — packages visible without an
+  import, closest first. Default: the file's own package. C# returns every
   parent namespace and the global one.
-- `class_stereotype(decl)` — default: `<<record>>` / `<<struct>>` by kind,
-  then `<<abstract>>`, then `<<static>>`.
-- `relation_policy(parsed_files)` — how a held type becomes a relation.
-  Default: composition (`*-->`) when instantiated or public, association
-  (`-->`) otherwise. Return a `RelationPolicy` subclass to change it; it
-  receives every parsed file, so it can depend on the whole project (Unity
-  finds ScriptableObject subclasses this way).
+
+A `ParsedFile` holds:
+
+- `package` — the grouping unit (package, namespace, module path...), `.`
+  separated, or `None`. It may come from the text or from
+  `source.relative_path`.
+- `declarations` — one `TypeDecl` per UML classifier: `name`, `kind`
+  (`CLASS`, `INTERFACE` or `ENUM`), `stereotype` (your label for what it
+  really is: `<<record>>`, `<<module>>`, `<<trait>>`...), `is_abstract`,
+  `members` (`Member`: kind, name, visibility, static/abstract flags,
+  display type, parameter texts), `enum_values`. A file with no
+  declarations is still linked (it may extend types declared elsewhere) but
+  gets no diagram.
+- `hints` — where the file's names come from: `type_imports` (name ->
+  package) and `namespace_imports` (packages imported whole). Used to place
+  relation ends in their package.
+- `facts` — yours; the core never reads it.
+
+`Relation(source, arrow, target, level, multiplicity)` uses bare names and
+the arrows in `docgen.core.relations` (`INHERITS`, `REALIZES`, `COMPOSES`,
+`AGGREGATES`, `ASSOCIATES`, `DEPENDS`). `level` decides the views: base
+views show `INHERITANCE` and `STRONG`, full views everything.
+
+Stereotypes need a color: pass a `StereotypeStyle` for each of yours to
+`skinparam_lines` (`style.MODULE_STYLE` exists for module boxes).
+
+## The object-oriented route (`docgen/oo`)
+
+Subclass `docgen.oo.language.ObjectOrientedLanguage`. Its `link` infers
+relations from one `TypeFacts` per declaration. Build each file with
+`object_oriented_file(stem, package, hints, types)`, where `types` pairs each
+`TypeDecl` with its `TypeFacts`:
+
+- `name`, `base_class`, `additional_bases` (multiple inheritance),
+  `interfaces` — type texts as written; a base must be a simple name.
+- `field_usages` (`FieldUsage`: type text, public?, serialized?),
+  `signature_types`, `body_types`, `newed_types`. Leave them empty for a
+  type that should get no usage relations (enums and interfaces do).
+
+Extra class attributes:
+
+| Attribute | Example |
+|---|---|
+| `vocabulary` | `TypeVocabulary(primitives=..., collection_wrappers=...)`; `type_argument_brackets=("[", "]")` if the language writes `list[Foo]` |
+| `hidden_bases` (optional) | base classes never drawn, e.g. Unity's `MonoBehaviour` |
+
+Override `relation_policy(project)` to change how a held type becomes a
+relation (Unity: ScriptableObject fields are aggregation). It receives the
+whole project, so it can depend on every file.
+
+`docgen.oo.stereotypes.class_stereotype(modifiers, kind_stereotype)` gives
+the shared labels (`<<record>>`, `<<struct>>`, `<<abstract>>`,
+`<<static>>`).
 
 ## Helpers for brace languages
 
 `docgen/clike/` holds scanning helpers shared by Java and C#: comment
 stripping, brace matching, depth-aware splitting, flattening a type body
-into member statements, and scanning method bodies for used types. Use them
-for any C-like language; a language with other syntax doesn't need them.
-
-`tests/toy_language.py` is a complete minimal language in about 50 lines;
-`docgen/languages/python/` is a full one built on Python's `ast` module
-instead of the brace-language helpers.
+into member statements, and scanning method bodies for used types. A
+language with other syntax doesn't need them: `docgen/languages/python/`
+uses Python's own `ast` module.

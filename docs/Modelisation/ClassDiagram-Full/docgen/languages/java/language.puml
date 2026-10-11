@@ -39,21 +39,23 @@ class JavaLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} RECORD
   # {static} _KINDS
 }
 }
 
-docgen.languages.java.JavaLanguage --|> docgen.core.Language
-docgen.languages.java.JavaLanguage ..> docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.java.JavaLanguage ..> docgen.oo.FieldUsage
 docgen.languages.java.JavaLanguage ..> docgen.core.ParsedFile
 docgen.languages.java.JavaLanguage ..> docgen.core.ResolutionHints
 docgen.languages.java.JavaLanguage ..> docgen.core.SourceText
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeDecl
+docgen.languages.java.JavaLanguage ..> docgen.oo.TypeFacts
 docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
 docgen.languages.java.language ..> docgen.core.TypeKind

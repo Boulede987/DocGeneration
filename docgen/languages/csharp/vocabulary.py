@@ -1,7 +1,7 @@
 """C# built-in types, collection wrappers, and stereotype colors."""
 
 from docgen.core.style import StereotypeStyle
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.oo.vocabulary import TypeVocabulary
 
 PRIMITIVES = frozenset({
     "void", "bool", "int", "float", "double", "long", "short", "byte",

@@ -4,7 +4,7 @@ project types), which wrappers mean "a collection of"."""
 import re
 from dataclasses import dataclass
 
-from .model import TYPE_PARAMETERS_START
+from docgen.core.model import TYPE_PARAMETERS_START
 
 TYPE_PARAMETERS_END = ">"
 _TYPE_TEXT_SEPARATORS = re.compile(r"[<>,\[\]\s\.\*\(\)]+")

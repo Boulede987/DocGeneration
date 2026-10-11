@@ -1,0 +1,22 @@
+namespace docgen.oo {
+class ObjectOrientedLanguage {
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
+  + link(Project[ObjectOrientedFacts]) : Mapping[ParsedFile[ObjectOrientedFacts], list[Relation]]
+}
+class language <<module>> {
+  + {static} ObjectOrientedFacts
+  + {static} DeclarationWithFacts
+  + {static} object_oriented_file(str, str | None, ResolutionHints, list[DeclarationWithFacts]) : ParsedFile[ObjectOrientedFacts]
+}
+}
+
+docgen.oo.ObjectOrientedLanguage --|> docgen.core.Language
+docgen.oo.ObjectOrientedLanguage *--> docgen.oo.TypeVocabulary
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.ParsedFile
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Project
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Relation
+docgen.oo.ObjectOrientedLanguage ..> docgen.oo.RelationPolicy
+docgen.oo.language ..> docgen.core.ParsedFile
+docgen.oo.language ..> docgen.core.ResolutionHints

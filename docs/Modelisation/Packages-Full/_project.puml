@@ -153,25 +153,14 @@ abstract class Language <<abstract>> {
   + source_suffix : str
   + views_dir : str
   + skinparam_lines : str[*]
-  + vocabulary : TypeVocabulary
-  + hidden_bases : str[*]
-  + {abstract} parse_file(SourceText) : ParsedFile
+  + {abstract} parse_file(SourceText) : ParsedFile[FactsT]
+  + {abstract} link(Project[FactsT]) : Mapping[ParsedFile[FactsT], list[Relation]]
   + enclosing_packages(str | None) : list[str | None]
-  + class_stereotype(TypeDecl) : str | None
-  + relation_policy(list[ParsedFile]) : RelationPolicy
-}
-class language <<module>> {
-  + {static} ABSTRACT_STEREOTYPE
-  + {static} STATIC_STEREOTYPE
-  # {static} _KIND_STEREOTYPES
 }
 enum TypeKind <<enum>> {
   CLASS
   INTERFACE
   ENUM
-  RECORD
-  STRUCT
-  MODULE
 }
 enum Visibility <<enum>> {
   PUBLIC
@@ -193,28 +182,14 @@ class Member <<dataclass>> {
   + type : str | None
   + params : str[*]
 }
-class FieldUsage <<dataclass>> {
-  + type_text : str
-  + is_public : bool
-  + is_serialized : bool
-}
 class TypeDecl <<dataclass>> {
   + name : str
   + kind : TypeKind
-  + modifiers : str[*]
-  + base_class : str | None
-  + interfaces : str[*]
+  + stereotype : str | None
+  + is_abstract : bool
   + members : Member[*]
   + enum_values : str[*]
-  + field_usages : FieldUsage[*]
-  + signature_types : str[*]
-  + body_types : str[*]
-  + newed_types : str[*]
-  + additional_bases : str[*]
   + bare_name : str
-  + is_abstract : bool
-  + is_static : bool
-  + has_usages : bool
 }
 class SourceText <<dataclass>> {
   + relative_path : Path
@@ -230,11 +205,11 @@ class ParsedFile <<dataclass>> {
   + package : str | None
   + declarations : TypeDecl[*]
   + hints : ResolutionHints
+  + facts : FactsT | None
+  + notes : str[*]
 }
 class model <<module>> {
   + {static} TYPE_PARAMETERS_START
-  + {static} ABSTRACT_MODIFIER
-  + {static} STATIC_MODIFIER
   + {static} bare_type_name(str) : str
 }
 class _ViewVariant <<dataclass>> {
@@ -283,19 +258,29 @@ class RunSummary <<dataclass>> {
   + errors : dict[Path, str]
   + package_count : int
   + excluded : int
+  + notes : dict[Path, list[str]]
+  + link_error : str | None
+  + has_errors : bool
   + record_error(SourceFile, Exception)
 }
 class pipeline <<module>> {
   + {static} SOURCE_ENCODING
   + {static} CURRENT_FOLDER_PREFIX
+  # {static} _error_text(Exception) : str
   + {static} normalized_pattern(str) : str
   # {static} _is_excluded(SourceFile, Sequence[str]) : bool
   + {static} discover_sources(Sequence[Path], str) : list[SourceFile]
-  # {static} _relations_of(ParsedFile, set[str], Language, RelationPolicy) : list[Relation]
-  + {static} build_file_diagram(ParsedFile, ProjectIndex, Language, RelationPolicy) : FileDiagram
+  + {static} build_file_diagram(ParsedFile, list[Relation], ProjectIndex, Language) : FileDiagram
   # {static} _parse_source(Language, SourceFile) : ParsedFile
   # {static} _parse_sources(Language, list[SourceFile], RunSummary) : dict[SourceFile, ParsedFile]
+  # {static} _write_diagrams(Language, dict[SourceFile, ParsedFile], Mapping[ParsedFile, list[Relation]], Project, Path, RunSummary) : list[FileDiagram]
+  # {static} _link(Language, Project, RunSummary) : Mapping[ParsedFile, list[Relation]]
   + {static} run(Language, Sequence[Path], Path, Sequence[str]) : RunSummary
+}
+class Project <<dataclass>> {
+  + files : ParsedFile[FactsT][*]
+  + index : ProjectIndex
+  + __post_init__()
 }
 class puml <<module>> {
   + {static} namespace_block(str | None, list[str]) : list[str]
@@ -315,29 +300,14 @@ class Relation <<dataclass>> {
   + multiplicity : str | None
   + render(str, str) : str
 }
-class FieldFacts <<dataclass>> {
-  + target : str
-  + is_collection : bool
-  + is_public : bool
-  + is_serialized : bool
-  + is_newed : bool
-}
-class RelationPolicy {
-  + classify_field(FieldFacts) : tuple[str, RelationLevel]
-}
 class relations <<module>> {
   + {static} INHERITS
   + {static} REALIZES
   + {static} COMPOSES
+  + {static} AGGREGATES
   + {static} ASSOCIATES
   + {static} DEPENDS
   + {static} MANY
-  # {static} _superclasses(TypeDecl) : list[str]
-  + {static} inherited_names(TypeDecl) : set[str]
-  + {static} inheritance_relations(TypeDecl, frozenset[str]) : list[Relation]
-  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
-  # {static} _merged_field_facts(TypeDecl, set[str], TypeVocabulary) : dict[str, FieldFacts]
-  + {static} usage_relations(TypeDecl, set[str], set[str], RelationPolicy, TypeVocabulary) : list[Relation]
 }
 class render <<module>> {
   + {static} STATIC_FLAG
@@ -346,8 +316,8 @@ class render <<module>> {
   + {static} INTERFACE_STEREOTYPE
   + {static} MEMBER_INDENT
   # {static} _render_member(Member) : str
-  # {static} _header(TypeDecl, str | None) : str
-  + {static} render_declaration(TypeDecl, str | None) : list[str]
+  # {static} _header(TypeDecl) : str
+  + {static} render_declaration(TypeDecl) : list[str]
 }
 class ProjectIndex {
   # _packages_by_name : dict[str, set[str | None]]
@@ -375,24 +345,6 @@ class style <<module>> {
   + {static} ENUM_STYLE : StereotypeStyle
   + {static} MODULE_STYLE : StereotypeStyle
   + {static} skinparam_lines(list[StereotypeStyle], list[StereotypeStyle] | None) : list[str]
-}
-class TypeVocabulary <<dataclass>> {
-  + primitives : str[*]
-  + collection_wrappers : str[*]
-  + type_argument_brackets : tuple[str, str]
-  + __post_init__()
-  # _wrapper(str) : str
-  + is_collection(str) : bool
-  + uml_type(str) : str
-  + type_names(str) : set[str]
-}
-class vocabulary <<module>> {
-  + {static} TYPE_PARAMETERS_END
-  # {static} _TYPE_TEXT_SEPARATORS
-  # {static} _TYPE_NAME
-  # {static} _ARRAY_SUFFIX
-  # {static} _UML_MANY_SUFFIX
-  # {static} _NULLABLE_MARK
 }
 }
 namespace docgen.languages {
@@ -432,12 +384,14 @@ class CSharpLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
   + enclosing_packages(str | None) : list[str | None]
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} STRUCT
   # {static} _KINDS
   # {static} _NAMESPACE_SEPARATOR
 }
@@ -528,11 +482,12 @@ class JavaLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} RECORD
   # {static} _KINDS
 }
 class MemberTypes <<dataclass>> {
@@ -593,6 +548,7 @@ class declarations <<module>> {
   + {static} GENERIC_BASE
   + {static} OBJECT_BASE
   + {static} DATACLASS_MODIFIER
+  + {static} DATACLASS_STEREOTYPE
   # {static} _ENUM_CONFIGURATION_PREFIX
   # {static} _classes_in(list[ast.stmt]) : Iterator[ast.ClassDef]
   + {static} base_names(ast.ClassDef) : list[str]
@@ -600,9 +556,10 @@ class declarations <<module>> {
   # {static} _modifiers(ast.ClassDef, list[str]) : frozenset[str]
   # {static} _enum_member_names(ast.stmt) : list[str]
   # {static} _enum_values(ast.ClassDef) : list[str]
-  # {static} _declaration(ast.ClassDef, TypeVocabulary) : TypeDecl
-  + {static} class_declarations(ast.Module, TypeVocabulary) : list[TypeDecl]
-  + {static} module_declaration(ast.Module, str, TypeVocabulary) : TypeDecl | None
+  # {static} _stereotype(frozenset[str]) : str | None
+  # {static} _declaration(ast.ClassDef, TypeVocabulary) : DeclarationWithFacts
+  + {static} class_declarations(ast.Module, TypeVocabulary) : list[DeclarationWithFacts]
+  + {static} module_declaration(ast.Module, str, TypeVocabulary) : DeclarationWithFacts | None
 }
 class PythonLanguage {
   + {static} name
@@ -611,11 +568,9 @@ class PythonLanguage {
   + {static} skinparam_lines
   + {static} vocabulary
   + {static} hidden_bases
-  + parse_file(SourceText) : ParsedFile
-  + class_stereotype(TypeDecl) : str | None
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
 }
 class language <<module>> {
-  + {static} DATACLASS_STEREOTYPE
   + {static} PACKAGE_MODULE_STEM
   + {static} MODULE_BOX_SUFFIX
   + {static} HIDDEN_BASES
@@ -726,17 +681,93 @@ class UnityLanguage {
   + {static} skinparam_lines
   + {static} vocabulary : TypeVocabulary
   + {static} hidden_bases
-  + class_stereotype(TypeDecl) : str | None
-  + relation_policy(list[ParsedFile]) : RelationPolicy
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
 }
 class language <<module>> {
   + {static} SCRIPTABLE_OBJECT
-  + {static} AGGREGATES
   + {static} UNITY_BASES
   + {static} UNITY_PRIMITIVES
   + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
   + {static} SCRIPTABLE_OBJECT_STEREOTYPE
-  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+  + {static} scriptable_object_subclasses(Project[ObjectOrientedFacts]) : set[str]
+}
+}
+namespace docgen.oo {
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeFacts <<dataclass>> {
+  + name : str
+  + base_class : str | None
+  + additional_bases : str[*]
+  + interfaces : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + bare_name : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class inference <<module>> {
+  # {static} _superclasses(TypeFacts) : list[str]
+  + {static} inherited_names(TypeFacts) : set[str]
+  + {static} inheritance_relations(TypeFacts, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeFacts, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeFacts, set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+  + {static} relations_of(list[TypeFacts], set[str], RelationPolicy, TypeVocabulary, frozenset[str]) : list[Relation]
+}
+class ObjectOrientedLanguage {
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
+  + link(Project[ObjectOrientedFacts]) : Mapping[ParsedFile[ObjectOrientedFacts], list[Relation]]
+}
+class language <<module>> {
+  + {static} ObjectOrientedFacts
+  + {static} DeclarationWithFacts
+  + {static} object_oriented_file(str, str | None, ResolutionHints, list[DeclarationWithFacts]) : ParsedFile[ObjectOrientedFacts]
+}
+class stereotypes <<module>> {
+  + {static} ABSTRACT_MODIFIER
+  + {static} STATIC_MODIFIER
+  + {static} RECORD_STEREOTYPE
+  + {static} STRUCT_STEREOTYPE
+  + {static} MODULE_STEREOTYPE
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  + {static} class_stereotype(frozenset[str], str | None) : str | None
+  + {static} is_abstract(frozenset[str]) : bool
+}
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+class vocabulary <<module>> {
+  + {static} TYPE_PARAMETERS_END
+  # {static} _TYPE_TEXT_SEPARATORS
+  # {static} _TYPE_NAME
+  # {static} _ARRAY_SUFFIX
+  # {static} _UML_MANY_SUFFIX
+  # {static} _NULLABLE_MARK
 }
 }
 
@@ -749,15 +780,12 @@ docgen.core.FileDiagram ..> docgen.core.RelationLevel
 docgen.core.file_diagram ..> docgen.core.FileDiagram
 docgen.core.file_diagram ..> docgen.core.FileOutputPaths
 docgen.core.file_diagram ..> docgen.core.Relation
-docgen.core.Language *--> docgen.core.TypeVocabulary
 docgen.core.Language ..> docgen.core.ParsedFile
-docgen.core.Language ..> docgen.core.RelationPolicy
+docgen.core.Language ..> docgen.core.Project
+docgen.core.Language ..> docgen.core.Relation
 docgen.core.Language ..> docgen.core.SourceText
-docgen.core.Language ..> docgen.core.TypeDecl
-docgen.core.language ..> docgen.core.TypeKind
 docgen.core.Member *--> docgen.core.MemberKind
 docgen.core.Member *--> docgen.core.Visibility
-docgen.core.TypeDecl *--> "0..*" docgen.core.FieldUsage
 docgen.core.TypeDecl *--> "0..*" docgen.core.Member
 docgen.core.TypeDecl *--> docgen.core.TypeKind
 docgen.core.ParsedFile *--> docgen.core.ResolutionHints
@@ -773,21 +801,15 @@ docgen.core.pipeline ..> docgen.core.FileDiagram
 docgen.core.pipeline ..> docgen.core.FileOutputPaths
 docgen.core.pipeline ..> docgen.core.Language
 docgen.core.pipeline ..> docgen.core.ParsedFile
+docgen.core.pipeline ..> docgen.core.Project
 docgen.core.pipeline ..> docgen.core.ProjectIndex
 docgen.core.pipeline ..> docgen.core.Relation
-docgen.core.pipeline ..> docgen.core.RelationPolicy
 docgen.core.pipeline ..> docgen.core.RunSummary
 docgen.core.pipeline ..> docgen.core.SourceFile
 docgen.core.pipeline ..> docgen.core.SourceText
+docgen.core.Project *--> "0..*" docgen.core.ParsedFile
+docgen.core.Project *--> docgen.core.ProjectIndex
 docgen.core.Relation *--> docgen.core.RelationLevel
-docgen.core.RelationPolicy ..> docgen.core.FieldFacts
-docgen.core.RelationPolicy ..> docgen.core.RelationLevel
-docgen.core.relations ..> docgen.core.FieldFacts
-docgen.core.relations ..> docgen.core.Relation
-docgen.core.relations ..> docgen.core.RelationLevel
-docgen.core.relations ..> docgen.core.RelationPolicy
-docgen.core.relations ..> docgen.core.TypeDecl
-docgen.core.relations ..> docgen.core.TypeVocabulary
 docgen.core.render ..> docgen.core.Member
 docgen.core.render ..> docgen.core.MemberKind
 docgen.core.render ..> docgen.core.TypeDecl
@@ -801,71 +823,90 @@ docgen.languages.languages ..> docgen.core.Language
 docgen.languages.languages ..> docgen.languages.python.PythonLanguage
 docgen.languages.languages ..> docgen.languages.unity.UnityLanguage
 docgen.languages.csharp.declarations ..> docgen.languages.csharp.TypeHeader
-docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
+docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ParsedFile
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ResolutionHints
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.SourceText
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeDecl
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.TypeFacts
 docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
 docgen.languages.csharp.language ..> docgen.core.TypeKind
-docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
-docgen.languages.csharp.members ..> docgen.core.FieldUsage
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.csharp.members ..> docgen.oo.FieldUsage
 docgen.languages.csharp.members ..> docgen.core.Member
 docgen.languages.csharp.members ..> docgen.core.MemberKind
 docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
-docgen.languages.csharp.members ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.members ..> docgen.oo.TypeVocabulary
 docgen.languages.csharp.members ..> docgen.core.Visibility
 docgen.languages.csharp.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.csharp.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.vocabulary ..> docgen.oo.TypeVocabulary
 docgen.languages.java.declarations ..> docgen.languages.java.TypeHeader
-docgen.languages.java.JavaLanguage --|> docgen.core.Language
-docgen.languages.java.JavaLanguage ..> docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.java.JavaLanguage ..> docgen.oo.FieldUsage
 docgen.languages.java.JavaLanguage ..> docgen.core.ParsedFile
 docgen.languages.java.JavaLanguage ..> docgen.core.ResolutionHints
 docgen.languages.java.JavaLanguage ..> docgen.core.SourceText
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeDecl
+docgen.languages.java.JavaLanguage ..> docgen.oo.TypeFacts
 docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
 docgen.languages.java.language ..> docgen.core.TypeKind
-docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
-docgen.languages.java.members ..> docgen.core.FieldUsage
+docgen.languages.java.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.java.members ..> docgen.oo.FieldUsage
 docgen.languages.java.members ..> docgen.core.Member
 docgen.languages.java.members ..> docgen.core.MemberKind
 docgen.languages.java.members ..> docgen.languages.java.MemberTypes
-docgen.languages.java.members ..> docgen.core.TypeVocabulary
+docgen.languages.java.members ..> docgen.oo.TypeVocabulary
 docgen.languages.java.members ..> docgen.core.Visibility
 docgen.languages.java.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.java.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.java.vocabulary ..> docgen.oo.TypeVocabulary
 docgen.languages.python.declarations ..> docgen.core.TypeDecl
+docgen.languages.python.declarations ..> docgen.oo.TypeFacts
 docgen.languages.python.declarations ..> docgen.core.TypeKind
-docgen.languages.python.declarations ..> docgen.core.TypeVocabulary
-docgen.languages.python.PythonLanguage --|> docgen.core.Language
+docgen.languages.python.declarations ..> docgen.oo.TypeVocabulary
+docgen.languages.python.PythonLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.python.PythonLanguage ..> docgen.core.ParsedFile
 docgen.languages.python.PythonLanguage ..> docgen.core.SourceText
-docgen.languages.python.PythonLanguage ..> docgen.core.TypeDecl
 docgen.languages.python.language ..> docgen.core.SourceText
 docgen.languages.python.members ..> docgen.languages.python.Attribute
 docgen.languages.python.members ..> docgen.core.Member
 docgen.languages.python.members ..> docgen.core.MemberKind
-docgen.languages.python.members ..> docgen.core.TypeVocabulary
+docgen.languages.python.members ..> docgen.oo.TypeVocabulary
 docgen.languages.python.modules ..> docgen.core.ResolutionHints
 docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
 docgen.languages.python.syntax ..> docgen.core.Visibility
 docgen.languages.python.syntax ..> docgen.languages.python._UnquoteForwardReferences
-docgen.languages.python.usages ..> docgen.core.FieldUsage
+docgen.languages.python.usages ..> docgen.oo.FieldUsage
 docgen.languages.python.usages ..> docgen.core.Visibility
 docgen.languages.python.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.python.vocabulary ..> docgen.core.TypeVocabulary
-docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.python.vocabulary ..> docgen.oo.TypeVocabulary
+docgen.languages.unity.UnityRelationPolicy --|> docgen.oo.RelationPolicy
 docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
-docgen.languages.unity.UnityRelationPolicy ..> docgen.core.FieldFacts
+docgen.languages.unity.UnityRelationPolicy ..> docgen.oo.FieldFacts
 docgen.languages.unity.UnityRelationPolicy ..> docgen.core.RelationLevel
-docgen.languages.unity.UnityLanguage ..> docgen.core.ParsedFile
-docgen.languages.unity.UnityLanguage ..> docgen.core.RelationPolicy
-docgen.languages.unity.UnityLanguage ..> docgen.core.TypeDecl
+docgen.languages.unity.UnityLanguage ..> docgen.core.Project
+docgen.languages.unity.UnityLanguage ..> docgen.oo.RelationPolicy
+docgen.languages.unity.UnityLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
-docgen.languages.unity.language ..> docgen.core.ParsedFile
+docgen.languages.unity.language ..> docgen.core.Project
 docgen.languages.unity.language ..> docgen.core.StereotypeStyle
+docgen.oo.TypeFacts *--> "0..*" docgen.oo.FieldUsage
+docgen.oo.RelationPolicy ..> docgen.oo.FieldFacts
+docgen.oo.RelationPolicy ..> docgen.core.RelationLevel
+docgen.oo.inference ..> docgen.oo.FieldFacts
+docgen.oo.inference ..> docgen.core.Relation
+docgen.oo.inference ..> docgen.core.RelationLevel
+docgen.oo.inference ..> docgen.oo.RelationPolicy
+docgen.oo.inference ..> docgen.oo.TypeFacts
+docgen.oo.inference ..> docgen.oo.TypeVocabulary
+docgen.oo.ObjectOrientedLanguage --|> docgen.core.Language
+docgen.oo.ObjectOrientedLanguage *--> docgen.oo.TypeVocabulary
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.ParsedFile
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Project
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Relation
+docgen.oo.ObjectOrientedLanguage ..> docgen.oo.RelationPolicy
+docgen.oo.language ..> docgen.core.ParsedFile
+docgen.oo.language ..> docgen.core.ResolutionHints
 
 @enduml

@@ -79,6 +79,6 @@ class members <<module>> {
 }
 }
 
-docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 
 @enduml

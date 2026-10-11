@@ -20,21 +20,21 @@ def _render_member(member: Member) -> str:
     return f"{head} : {member.type}" if member.type else head
 
 
-def _header(declaration: TypeDecl, stereotype: str | None) -> str:
+def _header(declaration: TypeDecl) -> str:
     if declaration.kind is TypeKind.ENUM:
         return f"enum {declaration.name} {ENUM_STEREOTYPE} {{"
     if declaration.kind is TypeKind.INTERFACE:
         return f"interface {declaration.name} {INTERFACE_STEREOTYPE} {{"
     abstract_prefix = "abstract " if declaration.is_abstract else ""
-    stereotype_suffix = f" {stereotype}" if stereotype else ""
+    stereotype_suffix = f" {declaration.stereotype}" if declaration.stereotype else ""
     return f"{abstract_prefix}class {declaration.name}{stereotype_suffix} {{"
 
 
-def render_declaration(declaration: TypeDecl, stereotype: str | None) -> list[str]:
-    """stereotype only applies to class-like kinds; enums and interfaces
-    always carry their own."""
+def render_declaration(declaration: TypeDecl) -> list[str]:
+    """The declaration's stereotype only applies to classes; enums and
+    interfaces always carry their own."""
     if declaration.kind is TypeKind.ENUM:
         body = declaration.enum_values
     else:
         body = [_render_member(member) for member in declaration.members]
-    return [_header(declaration, stereotype)] + [MEMBER_INDENT + line for line in body] + ["}"]
+    return [_header(declaration)] + [MEMBER_INDENT + line for line in body] + ["}"]

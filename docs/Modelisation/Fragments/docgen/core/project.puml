@@ -1,0 +1,10 @@
+namespace docgen.core {
+class Project <<dataclass>> {
+  + files : ParsedFile[FactsT][*]
+  + index : ProjectIndex
+  + __post_init__()
+}
+}
+
+docgen.core.Project *--> "0..*" docgen.core.ParsedFile
+docgen.core.Project *--> docgen.core.ProjectIndex

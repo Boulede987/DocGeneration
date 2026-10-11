@@ -1,11 +1,11 @@
-"""Core building blocks language authors use directly: TypeVocabulary and
-inheritance relations."""
+"""Object-oriented toolkit building blocks language authors use directly:
+TypeVocabulary and inheritance inference."""
 
 import pytest
 
-from docgen.core.model import TypeDecl, TypeKind
-from docgen.core.relations import inheritance_relations
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.oo.facts import TypeFacts
+from docgen.oo.inference import inheritance_relations
+from docgen.oo.vocabulary import TypeVocabulary
 
 SQUARE_BRACKETS = ("[", "]")
 
@@ -31,8 +31,8 @@ def test_vocabulary_rejects_empty_or_identical_brackets(brackets: tuple[str, str
 
 
 def test_a_base_listed_twice_draws_one_arrow():
-    declaration = TypeDecl(name="Child", kind=TypeKind.CLASS, base_class="Parent", additional_bases=["Parent", "Mixin"])
+    facts = TypeFacts(name="Child", base_class="Parent", additional_bases=["Parent", "Mixin"])
 
-    targets = [relation.target for relation in inheritance_relations(declaration, frozenset())]
+    targets = [relation.target for relation in inheritance_relations(facts, frozenset())]
 
     assert targets == ["Parent", "Mixin"]

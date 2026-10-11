@@ -12,6 +12,8 @@ SELF_DOCS = REPO_ROOT / "docs" / "Modelisation"
 EXCLUDE_OPTION = "--exclude"
 OUT_OPTION = "-o"
 EXCLUDES = ["tests/*"]
+# Design previews are hand-made proposals kept next to the diagram they extend.
+PREVIEW_GLOB = "*.preview.puml"
 REGENERATE_COMMAND = (
     f"python {PYTHON_SCRIPT} . "
     + " ".join(f'{EXCLUDE_OPTION} "{pattern}"' for pattern in EXCLUDES)
@@ -26,7 +28,7 @@ def test_self_docs_match_the_current_code(tmp_path: Path):
 
     assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
     try:
-        assert_same_tree(tmp_path, SELF_DOCS)
+        assert_same_tree(tmp_path, SELF_DOCS, ignore=PREVIEW_GLOB)
     except AssertionError as difference:
         pytest.fail(f"docs/Modelisation is out of date; regenerate it with:\n  {REGENERATE_COMMAND}\n\n{difference}")
 

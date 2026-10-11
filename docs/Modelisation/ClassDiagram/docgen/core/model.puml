@@ -37,9 +37,6 @@ enum TypeKind <<enum>> {
   CLASS
   INTERFACE
   ENUM
-  RECORD
-  STRUCT
-  MODULE
 }
 enum Visibility <<enum>> {
   PUBLIC
@@ -61,28 +58,14 @@ class Member <<dataclass>> {
   + type : str | None
   + params : str[*]
 }
-class FieldUsage <<dataclass>> {
-  + type_text : str
-  + is_public : bool
-  + is_serialized : bool
-}
 class TypeDecl <<dataclass>> {
   + name : str
   + kind : TypeKind
-  + modifiers : str[*]
-  + base_class : str | None
-  + interfaces : str[*]
+  + stereotype : str | None
+  + is_abstract : bool
   + members : Member[*]
   + enum_values : str[*]
-  + field_usages : FieldUsage[*]
-  + signature_types : str[*]
-  + body_types : str[*]
-  + newed_types : str[*]
-  + additional_bases : str[*]
   + bare_name : str
-  + is_abstract : bool
-  + is_static : bool
-  + has_usages : bool
 }
 class SourceText <<dataclass>> {
   + relative_path : Path
@@ -98,18 +81,17 @@ class ParsedFile <<dataclass>> {
   + package : str | None
   + declarations : TypeDecl[*]
   + hints : ResolutionHints
+  + facts : FactsT | None
+  + notes : str[*]
 }
 class model <<module>> {
   + {static} TYPE_PARAMETERS_START
-  + {static} ABSTRACT_MODIFIER
-  + {static} STATIC_MODIFIER
   + {static} bare_type_name(str) : str
 }
 }
 
 docgen.core.Member *--> docgen.core.MemberKind
 docgen.core.Member *--> docgen.core.Visibility
-docgen.core.TypeDecl *--> "0..*" docgen.core.FieldUsage
 docgen.core.TypeDecl *--> "0..*" docgen.core.Member
 docgen.core.TypeDecl *--> docgen.core.TypeKind
 docgen.core.ParsedFile *--> docgen.core.ResolutionHints

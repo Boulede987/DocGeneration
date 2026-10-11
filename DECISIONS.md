@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-10-11 — The core is the UML model; relation inference belongs to languages
+
+**Context:** Adding Python took 4 core changes, and a Rust design would have
+added more (impl merging in the pipeline, an ownership flag, enum usages).
+The core held one language family's inference rules (field usages, relation
+policies, vocabularies, record/struct/module kinds), so every language with
+other rules had to change it.
+
+**Decision:** `docgen/core` holds only the UML model (classifiers with
+class/interface/enum kinds, stereotypes, members, relations) and the shared
+machinery. Each language computes its own relations in
+`Language.link(project)` from facts private to it. The object-oriented rules
+moved to an opt-in toolkit, `docgen/oo`, used by Java, C#, Unity and Python.
+Output is byte-identical (golden tests; mineutze, ml-agents and this repo
+compared against main).
+
+**Alternatives considered:**
+- Extension points on the existing core (a link hook, language-defined
+  field tags, data-driven usages) — rejected: it made the leak more flexible
+  without removing it; FieldUsage, FieldFacts and TypeDecl's usage lists
+  would have stayed language-shaped core concepts.
+
 ## 2026-10-10 — Python module boxes and self-generated project docs
 
 **Context:** In a diagram of this repository, classes used only by

@@ -12,5 +12,5 @@ class usages <<module>> {
 }
 }
 
-docgen.languages.python.usages ..> docgen.core.FieldUsage
+docgen.languages.python.usages ..> docgen.oo.FieldUsage
 docgen.languages.python.usages ..> docgen.core.Visibility

@@ -9,4 +9,4 @@ class vocabulary <<module>> {
 }
 
 docgen.languages.python.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.python.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.python.vocabulary ..> docgen.oo.TypeVocabulary

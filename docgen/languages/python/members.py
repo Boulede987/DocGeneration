@@ -4,7 +4,7 @@ import ast
 from dataclasses import dataclass
 
 from docgen.core.model import Member, MemberKind
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.oo.vocabulary import TypeVocabulary
 
 from .syntax import (
     DUNDER, FunctionNode, constructor_called, decorator_names, functions_of, simple_name, type_text,

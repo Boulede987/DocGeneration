@@ -39,15 +39,16 @@ class JavaLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} RECORD
   # {static} _KINDS
 }
 }
 
-docgen.languages.java.JavaLanguage --|> docgen.core.Language
+docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
 
 @enduml

@@ -1,14 +1,16 @@
-"""Language-neutral description of source code: SourceText is what a
-language parser receives; everything else is what it produces. Nothing
-after parsing reads source text."""
+"""The UML model every language translates its source into: classifiers
+with members, grouped in packages. SourceText is what a language parser
+receives; ParsedFile is what it produces. Nothing here describes a source
+language: how a language reads code and infers relations stays in that
+language (or in a toolkit it chooses)."""
 
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Generic, TypeVar
 
 TYPE_PARAMETERS_START = "<"
-ABSTRACT_MODIFIER = "abstract"
-STATIC_MODIFIER = "static"
+FactsT = TypeVar("FactsT")
 
 
 def bare_type_name(type_text: str) -> str:
@@ -18,12 +20,11 @@ def bare_type_name(type_text: str) -> str:
 
 
 class TypeKind(Enum):
+    """UML classifier kinds. Language-specific kinds (record, struct,
+    module, trait...) are drawn as one of these with a stereotype."""
     CLASS = "class"
     INTERFACE = "interface"
     ENUM = "enum"
-    RECORD = "record"
-    STRUCT = "struct"
-    MODULE = "module"  # a source module's free functions and constants
 
 
 class Visibility(Enum):
@@ -43,7 +44,7 @@ class MemberKind(Enum):
 @dataclass
 class Member:
     """One rendered member line. 'type' is the display text: a field's type,
-    or a method's return type — None for a method shown without one."""
+    or a method's return type — None when shown without one."""
     kind: MemberKind
     name: str
     visibility: Visibility
@@ -54,50 +55,20 @@ class Member:
 
 
 @dataclass
-class FieldUsage:
-    """A type held by a field, property or record component, as written in
-    source (e.g. 'List<Item>')."""
-    type_text: str
-    is_public: bool
-    is_serialized: bool
-
-
-@dataclass
 class TypeDecl:
-    """One declared type. Type texts (base_class, additional_bases,
-    interfaces, the usage lists) stay as written in source; simple names are
-    derived from them on demand. additional_bases: further superclasses,
-    for languages with multiple inheritance, in declaration order after
-    base_class."""
+    """One UML classifier. stereotype is the language's label for what it
+    really is ('<<record>>', '<<module>>'...), None for a plain class; enums
+    and interfaces always show their own."""
     name: str
     kind: TypeKind
-    modifiers: frozenset[str] = frozenset()
-    base_class: str | None = None
-    interfaces: list[str] = field(default_factory=list)
+    stereotype: str | None = None
+    is_abstract: bool = False
     members: list[Member] = field(default_factory=list)
     enum_values: list[str] = field(default_factory=list)
-    field_usages: list[FieldUsage] = field(default_factory=list)
-    signature_types: list[str] = field(default_factory=list)
-    body_types: list[str] = field(default_factory=list)
-    newed_types: list[str] = field(default_factory=list)
-    additional_bases: list[str] = field(default_factory=list)
 
     @property
     def bare_name(self) -> str:
         return bare_type_name(self.name)
-
-    @property
-    def is_abstract(self) -> bool:
-        return ABSTRACT_MODIFIER in self.modifiers
-
-    @property
-    def is_static(self) -> bool:
-        return STATIC_MODIFIER in self.modifiers
-
-    @property
-    def has_usages(self) -> bool:
-        """Enums and interfaces are drawn, but never get usage relations."""
-        return self.kind not in (TypeKind.ENUM, TypeKind.INTERFACE)
 
 
 @dataclass(frozen=True)
@@ -121,11 +92,16 @@ class ResolutionHints:
     namespace_imports: set[str] = field(default_factory=set)
 
 
-@dataclass
-class ParsedFile:
-    """'package' is the file's grouping unit (Java package, C# namespace...),
-    None when the file declares none."""
+@dataclass(eq=False)
+class ParsedFile(Generic[FactsT]):
+    """'package' is the file's grouping unit (Java package, C# namespace,
+    Python folder...), None when the file declares none. facts: whatever
+    the language keeps from parsing to compute relations later; the core
+    never reads it. notes: non-fatal warnings, reported per file.
+    Compared and hashed by identity: a file is one parse result."""
     stem: str
     package: str | None
     declarations: list[TypeDecl]
     hints: ResolutionHints = field(default_factory=ResolutionHints)
+    facts: FactsT | None = None
+    notes: list[str] = field(default_factory=list)

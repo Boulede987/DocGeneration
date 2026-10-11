@@ -24,10 +24,11 @@ def run_script(script: str, *args: object, cwd: Path) -> subprocess.CompletedPro
     )
 
 
-def puml_files(root: Path) -> dict[str, bytes]:
+def puml_files(root: Path, ignore: str | None = None) -> dict[str, bytes]:
     return {
         path.relative_to(root).as_posix(): path.read_bytes()
         for path in sorted(root.rglob("*.puml"))
+        if ignore is None or not path.match(ignore)
     }
 
 
@@ -43,9 +44,10 @@ def _difference_report(relative_path: str, expected: bytes, actual: bytes) -> st
     return diff or f"{relative_path}: bytes differ (line endings or encoding)"
 
 
-def assert_same_tree(actual_root: Path, expected_root: Path) -> None:
-    """Every .puml file byte-identical, same set of files."""
-    expected = puml_files(expected_root)
+def assert_same_tree(actual_root: Path, expected_root: Path, ignore: str | None = None) -> None:
+    """Every .puml file byte-identical, same set of files (files matching
+    the ignore glob in expected_root aside)."""
+    expected = puml_files(expected_root, ignore)
     assert expected, f"golden folder {expected_root} is missing or holds no .puml file"
     actual = puml_files(actual_root)
     missing = sorted(set(expected) - set(actual))

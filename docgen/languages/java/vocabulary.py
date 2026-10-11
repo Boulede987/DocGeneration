@@ -1,7 +1,7 @@
 """Java built-in types, collection wrappers, and stereotype colors."""
 
 from docgen.core import style
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.oo.vocabulary import TypeVocabulary
 
 PRIMITIVES = frozenset({
     "void", "boolean", "int", "byte", "short", "long", "float", "double", "char",

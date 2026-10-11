@@ -73,11 +73,12 @@ class JavaLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} RECORD
   # {static} _KINDS
 }
 class MemberTypes <<dataclass>> {
@@ -130,10 +131,6 @@ class vocabulary <<module>> {
   + {static} SKINPARAM_LINES
 }
 }
-class docgen.core.FieldUsage <<external>> [[core.svg]] {
-}
-class docgen.core.Language <<external>> [[core.svg]] {
-}
 class docgen.core.Member <<external>> [[core.svg]] {
 }
 class docgen.core.MemberKind <<external>> [[core.svg]] {
@@ -150,29 +147,36 @@ class docgen.core.TypeDecl <<external>> [[core.svg]] {
 }
 class docgen.core.TypeKind <<external>> [[core.svg]] {
 }
-class docgen.core.TypeVocabulary <<external>> [[core.svg]] {
-}
 class docgen.core.Visibility <<external>> [[core.svg]] {
+}
+class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
+}
+class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeFacts <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeVocabulary <<external>> [[oo.svg]] {
 }
 
 docgen.languages.java.declarations ..> docgen.languages.java.TypeHeader
-docgen.languages.java.JavaLanguage --|> docgen.core.Language
-docgen.languages.java.JavaLanguage ..> docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.java.JavaLanguage ..> docgen.oo.FieldUsage
 docgen.languages.java.JavaLanguage ..> docgen.core.ParsedFile
 docgen.languages.java.JavaLanguage ..> docgen.core.ResolutionHints
 docgen.languages.java.JavaLanguage ..> docgen.core.SourceText
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeDecl
+docgen.languages.java.JavaLanguage ..> docgen.oo.TypeFacts
 docgen.languages.java.JavaLanguage ..> docgen.languages.java.TypeHeader
 docgen.languages.java.JavaLanguage ..> docgen.core.TypeKind
 docgen.languages.java.language ..> docgen.core.TypeKind
-docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
-docgen.languages.java.members ..> docgen.core.FieldUsage
+docgen.languages.java.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.java.members ..> docgen.oo.FieldUsage
 docgen.languages.java.members ..> docgen.core.Member
 docgen.languages.java.members ..> docgen.core.MemberKind
 docgen.languages.java.members ..> docgen.languages.java.MemberTypes
-docgen.languages.java.members ..> docgen.core.TypeVocabulary
+docgen.languages.java.members ..> docgen.oo.TypeVocabulary
 docgen.languages.java.members ..> docgen.core.Visibility
 docgen.languages.java.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.java.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.java.vocabulary ..> docgen.oo.TypeVocabulary
 
 @enduml

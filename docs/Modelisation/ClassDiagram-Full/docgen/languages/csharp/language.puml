@@ -39,22 +39,25 @@ class CSharpLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
   + enclosing_packages(str | None) : list[str | None]
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} STRUCT
   # {static} _KINDS
   # {static} _NAMESPACE_SEPARATOR
 }
 }
 
-docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
+docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ParsedFile
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ResolutionHints
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.SourceText
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeDecl
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.TypeFacts
 docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
 docgen.languages.csharp.language ..> docgen.core.TypeKind

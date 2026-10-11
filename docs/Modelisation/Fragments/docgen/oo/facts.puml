@@ -1,0 +1,20 @@
+namespace docgen.oo {
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeFacts <<dataclass>> {
+  + name : str
+  + base_class : str | None
+  + additional_bases : str[*]
+  + interfaces : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + bare_name : str
+}
+}
+
+docgen.oo.TypeFacts *--> "0..*" docgen.oo.FieldUsage
