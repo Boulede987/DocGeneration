@@ -1,7 +1,7 @@
 """Python built-in and typing names, collection wrappers, stereotype colors."""
 
 from docgen.core import style
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.oo.vocabulary import TypeVocabulary
 
 PRIMITIVES = frozenset({
     "None", "True", "False", "Ellipsis", "NotImplemented",

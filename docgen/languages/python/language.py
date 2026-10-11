@@ -1,23 +1,21 @@
 import ast
 
-from docgen.core.language import Language
-from docgen.core.model import ParsedFile, SourceText, TypeDecl
+from docgen.core.model import ParsedFile, SourceText
+from docgen.oo.language import ObjectOrientedFacts, ObjectOrientedLanguage, object_oriented_file
 
 from .declarations import (
-    ABSTRACT_BASE, DATACLASS_MODIFIER, ENUM_BASES, GENERIC_BASE, OBJECT_BASE, PROTOCOL_BASE, class_declarations,
-    module_declaration,
+    ABSTRACT_BASE, ENUM_BASES, GENERIC_BASE, OBJECT_BASE, PROTOCOL_BASE, class_declarations, module_declaration,
 )
 from .modules import import_hints, package_of
-from .vocabulary import DATACLASS_STYLE, PYTHON_VOCABULARY, SKINPARAM_LINES
+from .vocabulary import PYTHON_VOCABULARY, SKINPARAM_LINES
 
-DATACLASS_STEREOTYPE = f"<<{DATACLASS_STYLE.stereotype}>>"
 PACKAGE_MODULE_STEM = "__init__"
 MODULE_BOX_SUFFIX = "_module"
 # Bases that only set a class's kind or typing, never drawn as inheritance.
 HIDDEN_BASES = frozenset({OBJECT_BASE, ABSTRACT_BASE, GENERIC_BASE, PROTOCOL_BASE}) | ENUM_BASES
 
 
-class PythonLanguage(Language):
+class PythonLanguage(ObjectOrientedLanguage):
     """Parsed with the standard library's ast: unparsable text raises (a
     SyntaxError), and only that file fails."""
     name = "python"
@@ -27,23 +25,17 @@ class PythonLanguage(Language):
     vocabulary = PYTHON_VOCABULARY
     hidden_bases = HIDDEN_BASES
 
-    def parse_file(self, source: SourceText) -> ParsedFile:
+    def parse_file(self, source: SourceText) -> ParsedFile[ObjectOrientedFacts]:
         tree = ast.parse(source.text, filename=str(source.relative_path))
         package = package_of(source.relative_path)
-        declarations = class_declarations(tree, self.vocabulary)
-        module_name = _module_name(source, {declaration.name for declaration in declarations})
+        types = class_declarations(tree, self.vocabulary)
+        module_name = _module_name(source, {declaration.name for declaration, _facts in types})
         module = module_declaration(tree, module_name, self.vocabulary)
-        return ParsedFile(
-            stem=source.stem,
-            package=package,
-            declarations=declarations + ([] if module is None else [module]),
-            hints=import_hints(tree, package),
+        if module is not None:
+            types.append(module)
+        return object_oriented_file(
+            stem=source.stem, package=package, hints=import_hints(tree, package), types=types,
         )
-
-    def class_stereotype(self, declaration: TypeDecl) -> str | None:
-        if DATACLASS_MODIFIER in declaration.modifiers:
-            return DATACLASS_STEREOTYPE
-        return super().class_stereotype(declaration)
 
 
 def _module_name(source: SourceText, class_names: set[str]) -> str:

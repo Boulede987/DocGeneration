@@ -47,43 +47,42 @@ class UnityLanguage {
   + {static} skinparam_lines
   + {static} vocabulary : TypeVocabulary
   + {static} hidden_bases
-  + class_stereotype(TypeDecl) : str | None
-  + relation_policy(list[ParsedFile]) : RelationPolicy
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
 }
 class language <<module>> {
   + {static} SCRIPTABLE_OBJECT
-  + {static} AGGREGATES
   + {static} UNITY_BASES
   + {static} UNITY_PRIMITIVES
   + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
   + {static} SCRIPTABLE_OBJECT_STEREOTYPE
-  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+  + {static} scriptable_object_subclasses(Project[ObjectOrientedFacts]) : set[str]
 }
 }
-class docgen.core.FieldFacts <<external>> [[core.svg]] {
-}
-class docgen.core.ParsedFile <<external>> [[core.svg]] {
+class docgen.core.Project <<external>> [[core.svg]] {
 }
 class docgen.core.RelationLevel <<external>> [[core.svg]] {
 }
-class docgen.core.RelationPolicy <<external>> [[core.svg]] {
-}
 class docgen.core.StereotypeStyle <<external>> [[core.svg]] {
-}
-class docgen.core.TypeDecl <<external>> [[core.svg]] {
 }
 class docgen.languages.csharp.CSharpLanguage <<external>> [[csharp.svg]] {
 }
+class docgen.languages.csharp.TypeHeader <<external>> [[csharp.svg]] {
+}
+class docgen.oo.FieldFacts <<external>> [[oo.svg]] {
+}
+class docgen.oo.RelationPolicy <<external>> [[oo.svg]] {
+}
 
-docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityRelationPolicy --|> docgen.oo.RelationPolicy
 docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
-docgen.languages.unity.UnityRelationPolicy ..> docgen.core.FieldFacts
+docgen.languages.unity.UnityRelationPolicy ..> docgen.oo.FieldFacts
 docgen.languages.unity.UnityRelationPolicy ..> docgen.core.RelationLevel
-docgen.languages.unity.UnityLanguage ..> docgen.core.ParsedFile
-docgen.languages.unity.UnityLanguage ..> docgen.core.RelationPolicy
-docgen.languages.unity.UnityLanguage ..> docgen.core.TypeDecl
+docgen.languages.unity.UnityLanguage ..> docgen.core.Project
+docgen.languages.unity.UnityLanguage ..> docgen.oo.RelationPolicy
+docgen.languages.unity.UnityLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.unity.UnityLanguage ..> docgen.languages.unity.UnityRelationPolicy
-docgen.languages.unity.language ..> docgen.core.ParsedFile
+docgen.languages.unity.language ..> docgen.core.Project
 docgen.languages.unity.language ..> docgen.core.StereotypeStyle
 
 @enduml

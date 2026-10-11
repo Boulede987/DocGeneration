@@ -42,6 +42,6 @@ class vocabulary <<module>> {
 }
 
 docgen.languages.csharp.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.csharp.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.vocabulary ..> docgen.oo.TypeVocabulary
 
 @enduml

@@ -45,6 +45,7 @@ class declarations <<module>> {
   + {static} GENERIC_BASE
   + {static} OBJECT_BASE
   + {static} DATACLASS_MODIFIER
+  + {static} DATACLASS_STEREOTYPE
   # {static} _ENUM_CONFIGURATION_PREFIX
   # {static} _classes_in(list[ast.stmt]) : Iterator[ast.ClassDef]
   + {static} base_names(ast.ClassDef) : list[str]
@@ -52,9 +53,10 @@ class declarations <<module>> {
   # {static} _modifiers(ast.ClassDef, list[str]) : frozenset[str]
   # {static} _enum_member_names(ast.stmt) : list[str]
   # {static} _enum_values(ast.ClassDef) : list[str]
-  # {static} _declaration(ast.ClassDef, TypeVocabulary) : TypeDecl
-  + {static} class_declarations(ast.Module, TypeVocabulary) : list[TypeDecl]
-  + {static} module_declaration(ast.Module, str, TypeVocabulary) : TypeDecl | None
+  # {static} _stereotype(frozenset[str]) : str | None
+  # {static} _declaration(ast.ClassDef, TypeVocabulary) : DeclarationWithFacts
+  + {static} class_declarations(ast.Module, TypeVocabulary) : list[DeclarationWithFacts]
+  + {static} module_declaration(ast.Module, str, TypeVocabulary) : DeclarationWithFacts | None
 }
 class PythonLanguage {
   + {static} name
@@ -63,11 +65,9 @@ class PythonLanguage {
   + {static} skinparam_lines
   + {static} vocabulary
   + {static} hidden_bases
-  + parse_file(SourceText) : ParsedFile
-  + class_stereotype(TypeDecl) : str | None
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
 }
 class language <<module>> {
-  + {static} DATACLASS_STEREOTYPE
   + {static} PACKAGE_MODULE_STEM
   + {static} MODULE_BOX_SUFFIX
   + {static} HIDDEN_BASES
@@ -168,10 +168,6 @@ class vocabulary <<module>> {
   + {static} SKINPARAM_LINES
 }
 }
-class docgen.core.FieldUsage <<external>> [[core.svg]] {
-}
-class docgen.core.Language <<external>> [[core.svg]] {
-}
 class docgen.core.Member <<external>> [[core.svg]] {
 }
 class docgen.core.MemberKind <<external>> [[core.svg]] {
@@ -188,30 +184,36 @@ class docgen.core.TypeDecl <<external>> [[core.svg]] {
 }
 class docgen.core.TypeKind <<external>> [[core.svg]] {
 }
-class docgen.core.TypeVocabulary <<external>> [[core.svg]] {
-}
 class docgen.core.Visibility <<external>> [[core.svg]] {
+}
+class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
+}
+class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeFacts <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeVocabulary <<external>> [[oo.svg]] {
 }
 
 docgen.languages.python.declarations ..> docgen.core.TypeDecl
+docgen.languages.python.declarations ..> docgen.oo.TypeFacts
 docgen.languages.python.declarations ..> docgen.core.TypeKind
-docgen.languages.python.declarations ..> docgen.core.TypeVocabulary
-docgen.languages.python.PythonLanguage --|> docgen.core.Language
+docgen.languages.python.declarations ..> docgen.oo.TypeVocabulary
+docgen.languages.python.PythonLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.python.PythonLanguage ..> docgen.core.ParsedFile
 docgen.languages.python.PythonLanguage ..> docgen.core.SourceText
-docgen.languages.python.PythonLanguage ..> docgen.core.TypeDecl
 docgen.languages.python.language ..> docgen.core.SourceText
 docgen.languages.python.members ..> docgen.languages.python.Attribute
 docgen.languages.python.members ..> docgen.core.Member
 docgen.languages.python.members ..> docgen.core.MemberKind
-docgen.languages.python.members ..> docgen.core.TypeVocabulary
+docgen.languages.python.members ..> docgen.oo.TypeVocabulary
 docgen.languages.python.modules ..> docgen.core.ResolutionHints
 docgen.languages.python._UnquoteForwardReferences --|> NodeTransformer
 docgen.languages.python.syntax ..> docgen.core.Visibility
 docgen.languages.python.syntax ..> docgen.languages.python._UnquoteForwardReferences
-docgen.languages.python.usages ..> docgen.core.FieldUsage
+docgen.languages.python.usages ..> docgen.oo.FieldUsage
 docgen.languages.python.usages ..> docgen.core.Visibility
 docgen.languages.python.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.python.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.python.vocabulary ..> docgen.oo.TypeVocabulary
 
 @enduml

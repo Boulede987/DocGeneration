@@ -4,7 +4,8 @@
 import ast
 from typing import Iterable
 
-from docgen.core.model import FieldUsage, Visibility
+from docgen.core.model import Visibility
+from docgen.oo.facts import FieldUsage
 
 from .members import CONSTRUCTOR, attributes_of, module_functions, parameter_types, return_type
 from .syntax import FunctionNode, constructor_called, functions_of, looks_like_class_name, type_text, visibility_of

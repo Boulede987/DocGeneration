@@ -1,0 +1,21 @@
+namespace docgen.oo {
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class inference <<module>> {
+  # {static} _superclasses(TypeFacts) : list[str]
+  + {static} inherited_names(TypeFacts) : set[str]
+  + {static} inheritance_relations(TypeFacts, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeFacts, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeFacts, set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+  + {static} relations_of(list[TypeFacts], set[str], RelationPolicy, TypeVocabulary, frozenset[str]) : list[Relation]
+}
+}

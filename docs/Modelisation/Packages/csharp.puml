@@ -69,12 +69,14 @@ class CSharpLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
   + enclosing_packages(str | None) : list[str | None]
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} STRUCT
   # {static} _KINDS
   # {static} _NAMESPACE_SEPARATOR
 }
@@ -129,12 +131,12 @@ class vocabulary <<module>> {
   + {static} STRUCT_STYLE : StereotypeStyle
 }
 }
-class docgen.core.FieldUsage <<external>> [[core.svg]] {
+class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
 }
-class docgen.core.Language <<external>> [[core.svg]] {
+class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
 }
 
-docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
-docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 
 @enduml

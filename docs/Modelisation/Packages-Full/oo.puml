@@ -1,0 +1,148 @@
+@startuml oo
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor<<interface>> #D6EAF8
+  BorderColor<<interface>> #2E86C1
+}
+skinparam class {
+  BackgroundColor<<abstract>> #E8DAEF
+  BorderColor<<abstract>> #8E44AD
+}
+skinparam class {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam class {
+  BackgroundColor<<dataclass>> #FCF3CF
+  BorderColor<<dataclass>> #B7950B
+}
+skinparam class {
+  BackgroundColor<<module>> #DDEBF7
+  BorderColor<<module>> #4A6FA5
+}
+skinparam class {
+  BackgroundColor<<static>> #a7faa0
+  BorderColor<<static>> #38d610
+}
+skinparam class {
+  BackgroundColor<<enum>> #F5B7B1
+  BorderColor<<enum>> #C0392B
+}
+
+skinparam class {
+  BackgroundColor<<external>> #EAECEE
+  BorderColor<<external>> #839192
+}
+
+namespace docgen.oo {
+class FieldUsage <<dataclass>> {
+  + type_text : str
+  + is_public : bool
+  + is_serialized : bool
+}
+class TypeFacts <<dataclass>> {
+  + name : str
+  + base_class : str | None
+  + additional_bases : str[*]
+  + interfaces : str[*]
+  + field_usages : FieldUsage[*]
+  + signature_types : str[*]
+  + body_types : str[*]
+  + newed_types : str[*]
+  + bare_name : str
+}
+class FieldFacts <<dataclass>> {
+  + target : str
+  + is_collection : bool
+  + is_public : bool
+  + is_serialized : bool
+  + is_newed : bool
+}
+class RelationPolicy {
+  + classify_field(FieldFacts) : tuple[str, RelationLevel]
+}
+class inference <<module>> {
+  # {static} _superclasses(TypeFacts) : list[str]
+  + {static} inherited_names(TypeFacts) : set[str]
+  + {static} inheritance_relations(TypeFacts, frozenset[str]) : list[Relation]
+  # {static} _merge(FieldFacts | None, str, bool, bool, bool, bool) : FieldFacts
+  # {static} _merged_field_facts(TypeFacts, set[str], TypeVocabulary) : dict[str, FieldFacts]
+  + {static} usage_relations(TypeFacts, set[str], RelationPolicy, TypeVocabulary) : list[Relation]
+  + {static} relations_of(list[TypeFacts], set[str], RelationPolicy, TypeVocabulary, frozenset[str]) : list[Relation]
+}
+class ObjectOrientedLanguage {
+  + vocabulary : TypeVocabulary
+  + hidden_bases : str[*]
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
+  + link(Project[ObjectOrientedFacts]) : Mapping[ParsedFile[ObjectOrientedFacts], list[Relation]]
+}
+class language <<module>> {
+  + {static} ObjectOrientedFacts
+  + {static} DeclarationWithFacts
+  + {static} object_oriented_file(str, str | None, ResolutionHints, list[DeclarationWithFacts]) : ParsedFile[ObjectOrientedFacts]
+}
+class stereotypes <<module>> {
+  + {static} ABSTRACT_MODIFIER
+  + {static} STATIC_MODIFIER
+  + {static} RECORD_STEREOTYPE
+  + {static} STRUCT_STEREOTYPE
+  + {static} MODULE_STEREOTYPE
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  + {static} class_stereotype(frozenset[str], str | None) : str | None
+  + {static} is_abstract(frozenset[str]) : bool
+}
+class TypeVocabulary <<dataclass>> {
+  + primitives : str[*]
+  + collection_wrappers : str[*]
+  + type_argument_brackets : tuple[str, str]
+  + __post_init__()
+  # _wrapper(str) : str
+  + is_collection(str) : bool
+  + uml_type(str) : str
+  + type_names(str) : set[str]
+}
+class vocabulary <<module>> {
+  + {static} TYPE_PARAMETERS_END
+  # {static} _TYPE_TEXT_SEPARATORS
+  # {static} _TYPE_NAME
+  # {static} _ARRAY_SUFFIX
+  # {static} _UML_MANY_SUFFIX
+  # {static} _NULLABLE_MARK
+}
+}
+class docgen.core.Language <<external>> [[core.svg]] {
+}
+class docgen.core.ParsedFile <<external>> [[core.svg]] {
+}
+class docgen.core.Project <<external>> [[core.svg]] {
+}
+class docgen.core.Relation <<external>> [[core.svg]] {
+}
+class docgen.core.RelationLevel <<external>> [[core.svg]] {
+}
+class docgen.core.ResolutionHints <<external>> [[core.svg]] {
+}
+
+docgen.oo.TypeFacts *--> "0..*" docgen.oo.FieldUsage
+docgen.oo.RelationPolicy ..> docgen.oo.FieldFacts
+docgen.oo.RelationPolicy ..> docgen.core.RelationLevel
+docgen.oo.inference ..> docgen.oo.FieldFacts
+docgen.oo.inference ..> docgen.core.Relation
+docgen.oo.inference ..> docgen.core.RelationLevel
+docgen.oo.inference ..> docgen.oo.RelationPolicy
+docgen.oo.inference ..> docgen.oo.TypeFacts
+docgen.oo.inference ..> docgen.oo.TypeVocabulary
+docgen.oo.ObjectOrientedLanguage --|> docgen.core.Language
+docgen.oo.ObjectOrientedLanguage *--> docgen.oo.TypeVocabulary
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.ParsedFile
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Project
+docgen.oo.ObjectOrientedLanguage ..> docgen.core.Relation
+docgen.oo.ObjectOrientedLanguage ..> docgen.oo.RelationPolicy
+docgen.oo.language ..> docgen.core.ParsedFile
+docgen.oo.language ..> docgen.core.ResolutionHints
+
+@enduml

@@ -1,17 +1,18 @@
 """The run every language shares: find source files under one or more
-roots, parse each once, index the project's types, write per-file diagrams,
-then the package views."""
+roots, parse each once, let the language link the project (relations,
+cross-file merges), write per-file diagrams, then the package views."""
 
 from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from .file_diagram import FileDiagram, FileOutputPaths, write_file_outputs
 from .language import Language
 from .model import ParsedFile, SourceText
 from .package_views import generate_package_views
-from .relations import Relation, RelationPolicy, inheritance_relations, inherited_names, usage_relations
+from .project import Project
+from .relations import Relation
 from .render import render_declaration
 from .resolution import ProjectIndex, resolve_package
 
@@ -31,9 +32,19 @@ class RunSummary:
     errors: dict[Path, str] = field(default_factory=dict)
     package_count: int = 0
     excluded: int = 0
+    notes: dict[Path, list[str]] = field(default_factory=dict)
+    link_error: str | None = None  # the language failed to link: diagrams have no relations
 
     def record_error(self, source: SourceFile, error: Exception) -> None:
-        self.errors[source.relative_path] = f"{type(error).__name__}: {error}"
+        self.errors[source.relative_path] = _error_text(error)
+
+    @property
+    def has_errors(self) -> bool:
+        return bool(self.errors) or self.link_error is not None
+
+
+def _error_text(error: Exception) -> str:
+    return f"{type(error).__name__}: {error}"
 
 
 CURRENT_FOLDER_PREFIX = "./"
@@ -66,46 +77,21 @@ def discover_sources(src_roots: Sequence[Path], suffix: str) -> list[SourceFile]
     return [SourceFile(path, path.relative_to(root_of[path])) for path in sorted(root_of)]
 
 
-def _relations_of(
-    parsed: ParsedFile,
-    known_types: set[str],
-    language: Language,
-    policy: RelationPolicy,
-) -> list[Relation]:
-    """Sorted by level, stable: within a level, declaration order is kept."""
-    declarations = parsed.declarations
-    inheritance = [
-        relation
-        for declaration in declarations
-        for relation in inheritance_relations(declaration, language.hidden_bases)
-    ]
-    usages = [
-        relation
-        for declaration in declarations
-        for relation in usage_relations(
-            declaration, known_types, inherited_names(declaration), policy, language.vocabulary,
-        )
-    ]
-    return sorted(inheritance + usages, key=lambda relation: relation.level)
-
-
 def build_file_diagram(
     parsed: ParsedFile,
+    relations: list[Relation],
     index: ProjectIndex,
     language: Language,
-    policy: RelationPolicy,
 ) -> FileDiagram:
-    relations = _relations_of(parsed, index.known_types(), language, policy)
-    names = {end for relation in relations for end in (relation.source, relation.target)}
+    """Relations are sorted by level, stably: within a level, the order the
+    language gave is kept."""
+    sorted_relations = sorted(relations, key=lambda relation: relation.level)
+    names = {end for relation in sorted_relations for end in (relation.source, relation.target)}
     return FileDiagram(
         stem=parsed.stem,
         package=parsed.package,
-        inner_lines=[
-            line
-            for declaration in parsed.declarations
-            for line in render_declaration(declaration, language.class_stereotype(declaration))
-        ],
-        relations=relations,
+        inner_lines=[line for declaration in parsed.declarations for line in render_declaration(declaration)],
+        relations=sorted_relations,
         name_packages={
             name: resolve_package(name, parsed, index, language.enclosing_packages) for name in names
         },
@@ -118,35 +104,34 @@ def _parse_source(language: Language, source: SourceFile) -> ParsedFile:
 
 
 def _parse_sources(language: Language, sources: list[SourceFile], summary: RunSummary) -> dict[SourceFile, ParsedFile]:
-    """Parsed files with at least one declaration. A file that fails or
-    declares nothing is recorded in summary, and the run goes on."""
+    """Every file that parsed, declarations or not: a file may only extend
+    types declared elsewhere. A file that fails is recorded in summary, and
+    the run goes on."""
     parsed_files: dict[SourceFile, ParsedFile] = {}
     for source in sources:
         try:
-            parsed = _parse_source(language, source)
+            parsed_files[source] = _parse_source(language, source)
         except Exception as error:
             summary.record_error(source, error)
-            continue
-        if parsed.declarations:
-            parsed_files[source] = parsed
-        else:
-            summary.skipped.append(source.relative_path)
     return parsed_files
 
 
-def run(language: Language, src_roots: Sequence[Path], output_base: Path, excludes: Sequence[str] = ()) -> RunSummary:
-    summary = RunSummary()
-    discovered = discover_sources(src_roots, language.source_suffix)
-    sources = [source for source in discovered if not _is_excluded(source, excludes)]
-    summary.excluded = len(discovered) - len(sources)
-    parsed_files = _parse_sources(language, sources, summary)
-    index = ProjectIndex(list(parsed_files.values()))
-    policy = language.relation_policy(list(parsed_files.values()))
-
+def _write_diagrams(
+    language: Language,
+    parsed_files: dict[SourceFile, ParsedFile],
+    relations: Mapping[ParsedFile, list[Relation]],
+    project: Project,
+    output_base: Path,
+    summary: RunSummary,
+) -> list[FileDiagram]:
+    """One diagram per file that declares something (after linking)."""
     file_diagrams: list[FileDiagram] = []
     for source, parsed in parsed_files.items():
+        if not parsed.declarations:
+            summary.skipped.append(source.relative_path)
+            continue
         try:
-            file_diagram = build_file_diagram(parsed, index, language, policy)
+            file_diagram = build_file_diagram(parsed, relations.get(parsed, []), project.index, language)
             write_file_outputs(file_diagram, FileOutputPaths.under(output_base, source.relative_path),
                                language.skinparam_lines)
         except Exception as error:
@@ -154,7 +139,32 @@ def run(language: Language, src_roots: Sequence[Path], output_base: Path, exclud
             continue
         file_diagrams.append(file_diagram)
         summary.generated += 1
+    return file_diagrams
 
+
+def _link(language: Language, project: Project, summary: RunSummary) -> Mapping[ParsedFile, list[Relation]]:
+    """A language that fails to link still gets its diagrams, without
+    relations: the declarations are right, and the error is reported."""
+    try:
+        return language.link(project)
+    except Exception as error:
+        summary.link_error = _error_text(error)
+        return {}
+
+
+def run(language: Language, src_roots: Sequence[Path], output_base: Path, excludes: Sequence[str] = ()) -> RunSummary:
+    """discover -> parse each file -> link the project -> write per-file
+    diagrams -> write package views. The same for every language."""
+    summary = RunSummary()
+    discovered = discover_sources(src_roots, language.source_suffix)
+    sources = [source for source in discovered if not _is_excluded(source, excludes)]
+    summary.excluded = len(discovered) - len(sources)
+    parsed_files = _parse_sources(language, sources, summary)
+    project = Project(list(parsed_files.values()))
+    relations = _link(language, project, summary)
+    summary.notes = {source.relative_path: parsed.notes for source, parsed in parsed_files.items() if parsed.notes}
+
+    file_diagrams = _write_diagrams(language, parsed_files, relations, project, output_base, summary)
     summary.package_count = generate_package_views(
         file_diagrams, output_base, language.views_dir, language.skinparam_lines,
     )

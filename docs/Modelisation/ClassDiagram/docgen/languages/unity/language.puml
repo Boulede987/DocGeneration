@@ -42,21 +42,20 @@ class UnityLanguage {
   + {static} skinparam_lines
   + {static} vocabulary : TypeVocabulary
   + {static} hidden_bases
-  + class_stereotype(TypeDecl) : str | None
-  + relation_policy(list[ParsedFile]) : RelationPolicy
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  + relation_policy(Project[ObjectOrientedFacts]) : RelationPolicy
 }
 class language <<module>> {
   + {static} SCRIPTABLE_OBJECT
-  + {static} AGGREGATES
   + {static} UNITY_BASES
   + {static} UNITY_PRIMITIVES
   + {static} SCRIPTABLE_OBJECT_STYLE : StereotypeStyle
   + {static} SCRIPTABLE_OBJECT_STEREOTYPE
-  + {static} scriptable_object_subclasses(list[ParsedFile]) : set[str]
+  + {static} scriptable_object_subclasses(Project[ObjectOrientedFacts]) : set[str]
 }
 }
 
-docgen.languages.unity.UnityRelationPolicy --|> docgen.core.RelationPolicy
+docgen.languages.unity.UnityRelationPolicy --|> docgen.oo.RelationPolicy
 docgen.languages.unity.UnityLanguage --|> docgen.languages.csharp.CSharpLanguage
 
 @enduml

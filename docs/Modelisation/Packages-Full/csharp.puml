@@ -69,12 +69,14 @@ class CSharpLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
   + enclosing_packages(str | None) : list[str | None]
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + stereotype(TypeHeader, frozenset[str]) : str | None
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} STRUCT
   # {static} _KINDS
   # {static} _NAMESPACE_SEPARATOR
 }
@@ -129,10 +131,6 @@ class vocabulary <<module>> {
   + {static} STRUCT_STYLE : StereotypeStyle
 }
 }
-class docgen.core.FieldUsage <<external>> [[core.svg]] {
-}
-class docgen.core.Language <<external>> [[core.svg]] {
-}
 class docgen.core.Member <<external>> [[core.svg]] {
 }
 class docgen.core.MemberKind <<external>> [[core.svg]] {
@@ -149,28 +147,35 @@ class docgen.core.TypeDecl <<external>> [[core.svg]] {
 }
 class docgen.core.TypeKind <<external>> [[core.svg]] {
 }
-class docgen.core.TypeVocabulary <<external>> [[core.svg]] {
-}
 class docgen.core.Visibility <<external>> [[core.svg]] {
+}
+class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
+}
+class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeFacts <<external>> [[oo.svg]] {
+}
+class docgen.oo.TypeVocabulary <<external>> [[oo.svg]] {
 }
 
 docgen.languages.csharp.declarations ..> docgen.languages.csharp.TypeHeader
-docgen.languages.csharp.CSharpLanguage --|> docgen.core.Language
+docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ParsedFile
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ResolutionHints
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.SourceText
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeDecl
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.TypeFacts
 docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
 docgen.languages.csharp.language ..> docgen.core.TypeKind
-docgen.languages.csharp.MemberTypes *--> "0..*" docgen.core.FieldUsage
-docgen.languages.csharp.members ..> docgen.core.FieldUsage
+docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
+docgen.languages.csharp.members ..> docgen.oo.FieldUsage
 docgen.languages.csharp.members ..> docgen.core.Member
 docgen.languages.csharp.members ..> docgen.core.MemberKind
 docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
-docgen.languages.csharp.members ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.members ..> docgen.oo.TypeVocabulary
 docgen.languages.csharp.members ..> docgen.core.Visibility
 docgen.languages.csharp.vocabulary ..> docgen.core.StereotypeStyle
-docgen.languages.csharp.vocabulary ..> docgen.core.TypeVocabulary
+docgen.languages.csharp.vocabulary ..> docgen.oo.TypeVocabulary
 
 @enduml

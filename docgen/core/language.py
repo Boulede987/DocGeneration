@@ -1,58 +1,43 @@
 """The contract a language implements to plug into the shared pipeline."""
 
 from abc import ABC, abstractmethod
+from typing import Generic, Mapping
 
-from .model import ParsedFile, SourceText, TypeDecl, TypeKind
-from .relations import RelationPolicy
-from .vocabulary import TypeVocabulary
-
-ABSTRACT_STEREOTYPE = "<<abstract>>"
-STATIC_STEREOTYPE = "<<static>>"
-_KIND_STEREOTYPES = {
-    TypeKind.RECORD: "<<record>>",
-    TypeKind.STRUCT: "<<struct>>",
-    TypeKind.MODULE: "<<module>>",
-}
+from .model import FactsT, ParsedFile, SourceText
+from .project import Project
+from .relations import Relation
 
 
-class Language(ABC):
+class Language(ABC, Generic[FactsT]):
     """Class attributes every language sets:
     name            registry key, e.g. "java"
     source_suffix   e.g. ".java"
     views_dir       folder for package-level views, e.g. "Packages"
     skinparam_lines PlantUML styling put at the top of every diagram
-    vocabulary      built-in types and collection wrappers
-    hidden_bases    base classes never drawn as an inheritance arrow
+
+    FactsT is what the language keeps from parsing (ParsedFile.facts) to
+    compute relations once the whole project is parsed.
     """
     name: str
     source_suffix: str
     views_dir: str
     skinparam_lines: list[str]
-    vocabulary: TypeVocabulary
-    hidden_bases: frozenset[str] = frozenset()
 
     @abstractmethod
-    def parse_file(self, source: SourceText) -> ParsedFile:
-        """Parse one source file. Return a ParsedFile with no declarations
-        when the file declares no type; raise when the text can't be
-        parsed (only that file fails)."""
+    def parse_file(self, source: SourceText) -> ParsedFile[FactsT]:
+        """Parse one source file into UML declarations. Return a ParsedFile
+        with no declarations when the file declares no type; raise when the
+        text can't be parsed (only that file fails)."""
+
+    @abstractmethod
+    def link(self, project: Project[FactsT]) -> Mapping[ParsedFile[FactsT], list[Relation]]:
+        """Once every file is parsed: each file's relations (ends are bare
+        names); a file absent from the result has none. May also complete
+        declarations across files (e.g. methods declared away from their
+        type) and add notes to files. Raising leaves every diagram without
+        relations and fails the run."""
 
     def enclosing_packages(self, package: str | None) -> list[str | None]:
         """Packages whose types this package sees without an import,
         closest first."""
         return [package]
-
-    def class_stereotype(self, declaration: TypeDecl) -> str | None:
-        """None: the class is drawn without a stereotype."""
-        if declaration.kind in _KIND_STEREOTYPES:
-            return _KIND_STEREOTYPES[declaration.kind]
-        if declaration.is_abstract:
-            return ABSTRACT_STEREOTYPE
-        if declaration.is_static:
-            return STATIC_STEREOTYPE
-        return None
-
-    def relation_policy(self, parsed_files: list[ParsedFile]) -> RelationPolicy:
-        """Built once per run, after every file is parsed, so a policy may
-        depend on the whole project."""
-        return RelationPolicy()

@@ -1,0 +1,13 @@
+namespace docgen.oo {
+class stereotypes <<module>> {
+  + {static} ABSTRACT_MODIFIER
+  + {static} STATIC_MODIFIER
+  + {static} RECORD_STEREOTYPE
+  + {static} STRUCT_STEREOTYPE
+  + {static} MODULE_STEREOTYPE
+  + {static} ABSTRACT_STEREOTYPE
+  + {static} STATIC_STEREOTYPE
+  + {static} class_stereotype(frozenset[str], str | None) : str | None
+  + {static} is_abstract(frozenset[str]) : bool
+}
+}

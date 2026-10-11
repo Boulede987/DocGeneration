@@ -3,14 +3,17 @@ ScriptableObject assets are shared rather than owned, and [SerializeField]
 fields are owned like public ones."""
 
 from docgen.core import style
-from docgen.core.model import ParsedFile, TypeDecl, bare_type_name
-from docgen.core.relations import ASSOCIATES, COMPOSES, FieldFacts, RelationLevel, RelationPolicy
-from docgen.core.vocabulary import TypeVocabulary
+from docgen.core.model import bare_type_name
+from docgen.core.project import Project
+from docgen.core.relations import AGGREGATES, ASSOCIATES, COMPOSES, RelationLevel
+from docgen.languages.csharp.declarations import TypeHeader
 from docgen.languages.csharp.language import CSharpLanguage
 from docgen.languages.csharp.vocabulary import COLLECTION_WRAPPERS, PRIMITIVES, STRUCT_STYLE
+from docgen.oo.inference import FieldFacts, RelationPolicy
+from docgen.oo.language import ObjectOrientedFacts
+from docgen.oo.vocabulary import TypeVocabulary
 
 SCRIPTABLE_OBJECT = "ScriptableObject"
-AGGREGATES = "o-->"
 UNITY_BASES = frozenset({"MonoBehaviour", SCRIPTABLE_OBJECT, "GameObject", "Component"})
 UNITY_PRIMITIVES = PRIMITIVES | frozenset({
     "GameObject", "MonoBehaviour", "ScriptableObject", "Component",
@@ -40,12 +43,12 @@ class UnityRelationPolicy(RelationPolicy):
         return ASSOCIATES, RelationLevel.WEAK
 
 
-def scriptable_object_subclasses(parsed_files: list[ParsedFile]) -> set[str]:
+def scriptable_object_subclasses(project: Project[ObjectOrientedFacts]) -> set[str]:
     """Every project type inheriting ScriptableObject, directly or not."""
     base_of = {
-        declaration.bare_name: bare_type_name(declaration.base_class) if declaration.base_class else None
-        for parsed in parsed_files
-        for declaration in parsed.declarations
+        type_facts.bare_name: bare_type_name(type_facts.base_class) if type_facts.base_class else None
+        for parsed in project.files
+        for type_facts in parsed.facts or []
     }
     found = {name for name, base in base_of.items() if base == SCRIPTABLE_OBJECT}
     newly_found = found
@@ -61,11 +64,11 @@ class UnityLanguage(CSharpLanguage):
     vocabulary = TypeVocabulary(primitives=UNITY_PRIMITIVES, collection_wrappers=COLLECTION_WRAPPERS)
     hidden_bases = UNITY_BASES
 
-    def class_stereotype(self, declaration: TypeDecl) -> str | None:
+    def stereotype(self, header: TypeHeader, modifiers: frozenset[str]) -> str | None:
         """Only a direct ScriptableObject subclass is marked."""
-        if declaration.base_class == SCRIPTABLE_OBJECT:
+        if header.base_class == SCRIPTABLE_OBJECT:
             return SCRIPTABLE_OBJECT_STEREOTYPE
-        return super().class_stereotype(declaration)
+        return super().stereotype(header, modifiers)
 
-    def relation_policy(self, parsed_files: list[ParsedFile]) -> RelationPolicy:
-        return UnityRelationPolicy(scriptable_object_subclasses(parsed_files))
+    def relation_policy(self, project: Project[ObjectOrientedFacts]) -> RelationPolicy:
+        return UnityRelationPolicy(scriptable_object_subclasses(project))

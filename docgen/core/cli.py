@@ -92,8 +92,13 @@ def _use_utf8_console() -> None:
 def _print_summary(summary: RunSummary, output_base: Path, views_dir: str) -> None:
     for relative_path in summary.skipped:
         print(f"  SKIP   {relative_path}  (no type declarations)")
+    for relative_path, notes in summary.notes.items():
+        for note in notes:
+            print(f"  NOTE   {relative_path}  — {note}")
     for relative_path, message in summary.errors.items():
         print(f"  ERROR  {relative_path}  — {message}")
+    if summary.link_error is not None:
+        print(f"  ERROR  linking the project (diagrams drawn without relations) — {summary.link_error}")
     print(f"\nDone: {summary.generated} generated, {len(summary.skipped)} skipped, "
           f"{summary.excluded} excluded, {len(summary.errors)} errors.")
     print(f"Wrote {summary.package_count} package diagrams + overview + project views "
@@ -101,11 +106,12 @@ def _print_summary(summary: RunSummary, output_base: Path, views_dir: str) -> No
 
 
 def main(language: Language, argv: list[str] | None = None, legacy_out_positional: bool = False) -> int:
-    """Returns the process exit code: non-zero when any file failed."""
+    """Returns the process exit code: non-zero when any file or the linking
+    failed."""
     _use_utf8_console()
     command_line = parse_command_line(language, sys.argv[1:] if argv is None else argv, legacy_out_positional)
     excluding = f" (excluding {', '.join(command_line.excludes)})" if command_line.excludes else ""
     print(f"Reading {language.source_suffix} files under {', '.join(map(str, command_line.src_dirs))}{excluding}")
     summary = run(language, command_line.src_dirs, command_line.output_base, command_line.excludes)
     _print_summary(summary, command_line.output_base, language.views_dir)
-    return EXIT_ERRORS if summary.errors else EXIT_OK
+    return EXIT_ERRORS if summary.has_errors else EXIT_OK

@@ -73,11 +73,12 @@ class JavaLanguage {
   + {static} views_dir
   + {static} skinparam_lines
   + {static} vocabulary
-  + parse_file(SourceText) : ParsedFile
-  # _declaration(TypeHeader) : TypeDecl
-  # _fill_class_like(TypeDecl, TypeHeader)
+  + parse_file(SourceText) : ParsedFile[ObjectOrientedFacts]
+  # _parse_type(TypeHeader) : DeclarationWithFacts
+  # _fill_class_like(TypeDecl, TypeFacts, TypeHeader)
 }
 class language <<module>> {
+  + {static} RECORD
   # {static} _KINDS
 }
 class MemberTypes <<dataclass>> {
@@ -130,12 +131,12 @@ class vocabulary <<module>> {
   + {static} SKINPARAM_LINES
 }
 }
-class docgen.core.FieldUsage <<external>> [[core.svg]] {
+class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
 }
-class docgen.core.Language <<external>> [[core.svg]] {
+class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
 }
 
-docgen.languages.java.JavaLanguage --|> docgen.core.Language
-docgen.languages.java.MemberTypes *--> "0..*" docgen.core.FieldUsage
+docgen.languages.java.JavaLanguage --|> docgen.oo.ObjectOrientedLanguage
+docgen.languages.java.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 
 @enduml
