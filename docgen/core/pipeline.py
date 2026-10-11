@@ -7,12 +7,12 @@ from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Mapping, Sequence
 
-from .file_diagram import FileDiagram, FileOutputPaths, write_file_outputs
+from .file_diagram import EndPackages, FileDiagram, FileOutputPaths, write_file_outputs
 from .language import Language
 from .model import ParsedFile, SourceText
 from .package_views import generate_package_views
 from .project import Project
-from .relations import Relation
+from .relations import PackageLookup, Relation
 from .render import render_declaration
 from .resolution import ProjectIndex, resolve_package
 
@@ -86,16 +86,24 @@ def build_file_diagram(
     """Relations are sorted by level, stably: within a level, the order the
     language gave is kept."""
     sorted_relations = sorted(relations, key=lambda relation: relation.level)
-    names = {end for relation in sorted_relations for end in (relation.source, relation.target)}
     return FileDiagram(
         stem=parsed.stem,
         package=parsed.package,
         inner_lines=[line for declaration in parsed.declarations for line in render_declaration(declaration)],
         relations=sorted_relations,
-        name_packages={
-            name: resolve_package(name, parsed, index, language.enclosing_packages) for name in names
+        end_packages={
+            relation: _end_packages(relation, parsed, index, language) for relation in sorted_relations
         },
     )
+
+
+def _end_packages(relation: Relation, parsed: ParsedFile, index: ProjectIndex, language: Language) -> EndPackages:
+    """The target's package as the language gave it, else looked up by name
+    like the source's."""
+    source = resolve_package(relation.source, parsed, index, language.enclosing_packages)
+    if isinstance(relation.target_package, PackageLookup):
+        return EndPackages(source, resolve_package(relation.target, parsed, index, language.enclosing_packages))
+    return EndPackages(source, relation.target_package)
 
 
 def _parse_source(language: Language, source: SourceFile) -> ParsedFile:

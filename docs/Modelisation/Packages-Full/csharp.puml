@@ -131,6 +131,12 @@ class vocabulary <<module>> {
   + {static} STRUCT_STYLE : StereotypeStyle
 }
 }
+class docgen.clike.body_scan <<external>> [[clike.svg]] {
+}
+class docgen.clike.modifiers <<external>> [[clike.svg]] {
+}
+class docgen.clike.text_scan <<external>> [[clike.svg]] {
+}
 class docgen.core.Member <<external>> [[core.svg]] {
 }
 class docgen.core.MemberKind <<external>> [[core.svg]] {
@@ -149,6 +155,10 @@ class docgen.core.TypeKind <<external>> [[core.svg]] {
 }
 class docgen.core.Visibility <<external>> [[core.svg]] {
 }
+class docgen.core.model <<external>> [[core.svg]] {
+}
+class docgen.core.style <<external>> [[core.svg]] {
+}
 class docgen.oo.FieldUsage <<external>> [[oo.svg]] {
 }
 class docgen.oo.ObjectOrientedLanguage <<external>> [[oo.svg]] {
@@ -157,8 +167,13 @@ class docgen.oo.TypeFacts <<external>> [[oo.svg]] {
 }
 class docgen.oo.TypeVocabulary <<external>> [[oo.svg]] {
 }
+class docgen.oo.language <<external>> [[oo.svg]] {
+}
+class docgen.oo.stereotypes <<external>> [[oo.svg]] {
+}
 
 docgen.languages.csharp.declarations ..> docgen.languages.csharp.TypeHeader
+docgen.languages.csharp.declarations ..> docgen.clike.text_scan
 docgen.languages.csharp.CSharpLanguage --|> docgen.oo.ObjectOrientedLanguage
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ParsedFile
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.ResolutionHints
@@ -168,6 +183,13 @@ docgen.languages.csharp.CSharpLanguage ..> docgen.oo.TypeFacts
 docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.TypeHeader
 docgen.languages.csharp.CSharpLanguage ..> docgen.core.TypeKind
 docgen.languages.csharp.language ..> docgen.core.TypeKind
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.vocabulary
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.language
+docgen.languages.csharp.CSharpLanguage ..> docgen.core.style
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.declarations
+docgen.languages.csharp.CSharpLanguage ..> docgen.oo.stereotypes
+docgen.languages.csharp.CSharpLanguage ..> docgen.languages.csharp.members
+docgen.languages.csharp.CSharpLanguage ..> docgen.clike.text_scan
 docgen.languages.csharp.MemberTypes *--> "0..*" docgen.oo.FieldUsage
 docgen.languages.csharp.members ..> docgen.oo.FieldUsage
 docgen.languages.csharp.members ..> docgen.core.Member
@@ -175,6 +197,10 @@ docgen.languages.csharp.members ..> docgen.core.MemberKind
 docgen.languages.csharp.members ..> docgen.languages.csharp.MemberTypes
 docgen.languages.csharp.members ..> docgen.oo.TypeVocabulary
 docgen.languages.csharp.members ..> docgen.core.Visibility
+docgen.languages.csharp.members ..> docgen.clike.text_scan
+docgen.languages.csharp.members ..> docgen.clike.modifiers
+docgen.languages.csharp.members ..> docgen.core.model
+docgen.languages.csharp.members ..> docgen.clike.body_scan
 docgen.languages.csharp.vocabulary ..> docgen.core.StereotypeStyle
 docgen.languages.csharp.vocabulary ..> docgen.oo.TypeVocabulary
 

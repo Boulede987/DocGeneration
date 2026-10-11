@@ -4,12 +4,16 @@ enum RelationLevel <<enum>> {
   STRONG
   WEAK
 }
+enum PackageLookup <<enum>> {
+  BY_NAME
+}
 class Relation <<dataclass>> {
   + source : str
   + arrow : str
   + target : str
   + level : RelationLevel
   + multiplicity : str | None
+  + target_package : str | None | PackageLookup
   + render(str, str) : str
 }
 class relations <<module>> {
@@ -23,4 +27,5 @@ class relations <<module>> {
 }
 }
 
+docgen.core.Relation *--> docgen.core.PackageLookup
 docgen.core.Relation *--> docgen.core.RelationLevel

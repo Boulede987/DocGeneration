@@ -42,11 +42,20 @@ class usages <<module>> {
   # {static} _mentioned_in(Iterable[ast.AST]) : list[str]
   + {static} body_types(ast.ClassDef) : list[str]
   + {static} module_body_types(ast.Module) : list[str]
+  + {static} module_scopes(ast.Module) : list[ast.AST]
+  # {static} _dotted_name(ast.expr) : str | None
+  # {static} _module_use(ast.AST, ImportedNames) : ModuleUse | None
+  + {static} module_uses(Iterable[ast.AST], ImportedNames) : list[ModuleUse]
   + {static} newed_types(ast.ClassDef) : list[str]
 }
 }
 
 docgen.languages.python.usages ..> docgen.oo.FieldUsage
+docgen.languages.python.usages ..> docgen.languages.python.ImportedNames
+docgen.languages.python.usages ..> docgen.languages.python.ModuleUse
 docgen.languages.python.usages ..> docgen.core.Visibility
+docgen.languages.python.usages ..> docgen.languages.python.members
+docgen.languages.python.usages ..> docgen.languages.python.syntax
+docgen.languages.python.usages ..> docgen.languages.python.modules
 
 @enduml

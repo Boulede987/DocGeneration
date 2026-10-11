@@ -54,5 +54,6 @@ docgen.oo.ObjectOrientedLanguage ..> docgen.core.Relation
 docgen.oo.ObjectOrientedLanguage ..> docgen.oo.RelationPolicy
 docgen.oo.language ..> docgen.core.ParsedFile
 docgen.oo.language ..> docgen.core.ResolutionHints
+docgen.oo.ObjectOrientedLanguage ..> docgen.oo.inference
 
 @enduml

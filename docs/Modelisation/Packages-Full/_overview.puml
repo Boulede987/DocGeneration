@@ -57,8 +57,10 @@ docgen_languages ..> docgen_languages_csharp
 docgen_languages ..> docgen_languages_java
 docgen_languages ..> docgen_languages_python
 docgen_languages ..> docgen_languages_unity
+docgen_languages_csharp ..> docgen_clike
 docgen_languages_csharp ..> docgen_core
 docgen_languages_csharp ..> docgen_oo
+docgen_languages_java ..> docgen_clike
 docgen_languages_java ..> docgen_core
 docgen_languages_java ..> docgen_oo
 docgen_languages_python ..> docgen_core

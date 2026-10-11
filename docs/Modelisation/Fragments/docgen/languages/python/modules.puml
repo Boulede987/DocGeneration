@@ -1,10 +1,28 @@
 namespace docgen.languages.python {
+class ModuleUse <<dataclass>> {
+  + module_path : str
+  + name : str
+}
+class ImportedNames <<dataclass>> {
+  + members : dict[str, ModuleUse]
+  + modules : dict[str, str]
+}
 class modules <<module>> {
   + {static} PACKAGE_SEPARATOR
+  + {static} PACKAGE_MODULE_STEM
+  + {static} STAR_IMPORT
   + {static} package_of(Path) : str | None
+  + {static} module_path_of(Path) : str | None
   # {static} _absolute_module(ast.ImportFrom, str | None) : str | None
   # {static} _module_and_parent(str) : set[str]
   # {static} _imported_paths(ast.AST, str | None) : set[str]
   + {static} import_hints(ast.Module, str | None) : ResolutionHints
+  # {static} _prefixes(str) : list[str]
+  # {static} _bind_import(ast.Import, ImportedNames)
+  # {static} _bind_import_from(ast.ImportFrom, str | None, ImportedNames)
+  # {static} _imports_in_source_order(ast.Module) : list[ast.Import | ast.ImportFrom]
+  + {static} imported_names(ast.Module, str | None) : ImportedNames
 }
 }
+
+docgen.languages.python.ImportedNames *--> docgen.languages.python.ModuleUse

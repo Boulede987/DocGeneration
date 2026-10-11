@@ -10,3 +10,5 @@ class body_scan <<module>> {
   + {static} instantiated_type_texts(Iterable[str], Iterable[str]) : list[str]
 }
 }
+
+docgen.clike.body_scan ..> docgen.clike.text_scan

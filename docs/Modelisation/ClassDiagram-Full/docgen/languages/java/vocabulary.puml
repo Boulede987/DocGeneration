@@ -43,5 +43,6 @@ class vocabulary <<module>> {
 
 docgen.languages.java.vocabulary ..> docgen.core.StereotypeStyle
 docgen.languages.java.vocabulary ..> docgen.oo.TypeVocabulary
+docgen.languages.java.vocabulary ..> docgen.core.style
 
 @enduml

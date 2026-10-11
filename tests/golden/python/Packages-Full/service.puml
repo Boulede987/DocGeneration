@@ -56,6 +56,7 @@ class OrderService {
   + {static} total(list[Product]) : Money
   + {static} create(Repository) : OrderService
   # _check(Product) : bool
+  + quote(list[Product]) : Money
 }
 class Order {
   + product : Product
@@ -70,6 +71,8 @@ class shop.model.Product <<external>> [[model.svg]] {
 }
 class shop.util.Validator <<external>> [[util.svg]] {
 }
+class shop.util.pricing <<external>> [[util.svg]] {
+}
 
 shop.service.OrderService --|> shop.service.BaseService
 shop.service.OrderService --|> shop.service.Auditable
@@ -80,5 +83,6 @@ shop.service.OrderService --> shop.service.Order
 shop.service.OrderService ..> shop.model.Money
 shop.service.OrderService ..> shop.model.Product
 shop.service.OrderService ..> shop.util.Validator
+shop.service.OrderService ..> shop.util.pricing
 
 @enduml

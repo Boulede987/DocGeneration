@@ -51,3 +51,7 @@ docgen.languages.java.members ..> docgen.core.MemberKind
 docgen.languages.java.members ..> docgen.languages.java.MemberTypes
 docgen.languages.java.members ..> docgen.oo.TypeVocabulary
 docgen.languages.java.members ..> docgen.core.Visibility
+docgen.languages.java.members ..> docgen.clike.text_scan
+docgen.languages.java.members ..> docgen.clike.modifiers
+docgen.languages.java.members ..> docgen.core.model
+docgen.languages.java.members ..> docgen.clike.body_scan

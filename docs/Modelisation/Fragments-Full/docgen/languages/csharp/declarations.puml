@@ -27,3 +27,4 @@ class declarations <<module>> {
 }
 
 docgen.languages.csharp.declarations ..> docgen.languages.csharp.TypeHeader
+docgen.languages.csharp.declarations ..> docgen.clike.text_scan

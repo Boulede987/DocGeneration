@@ -1,0 +1,51 @@
+@startuml module_dependencies
+title Python: dependencies on other modules' functions and constants
+
+partition "Parse (one file, no project knowledge)" {
+  start
+  :Read every import of the file;
+  note right
+    from .x import f        -> f : member f of <pkg>.x
+    from pkg import x       -> x : member x of pkg, AND module pkg.x
+                               (syntax can't tell; link keeps what exists)
+    import pkg.x            -> pkg.x : module pkg.x
+    import pkg.x as y       -> y : module pkg.x
+    relative paths resolved against the file's package
+  end note
+  repeat :Next declaration (class, or the file's <<module>> box);
+    :Walk its code\n(class: whole body; box: free functions + top-level assignments);
+    repeat :Next name or dotted name read in the code;
+      if (name is an imported member?) then (f())
+        :use (module path, f);
+      elseif (longest dotted prefix is an imported module?) then (x.f(), pkg.x.f())
+        :use (module path, next attribute);
+      else (local, builtin, attribute of an object)
+      endif
+    repeat while (more names?)
+    :Keep the declaration's distinct uses in its facts;
+  repeat while (more declarations?)
+}
+
+partition "Link (whole project)" {
+  :Index every <<module>> box by its module path\n(pkg.x for x.py, pkg for pkg/__init__.py)\nwith its member names;
+  repeat :Next declaration with uses;
+    repeat :Next use (path, name);
+      if (a box exists at path and declares name?) then (yes)
+        :target = that box;
+      elseif (a box exists at path.name?) then (from pkg import x: x is a module,\nused whole)
+        :no arrow: the module itself is named, no member is used;
+      else (unknown module: stdlib, third-party, or a class import)
+        :no arrow;
+        detach
+      endif
+      if (target is the declaration itself?) then (yes)
+        :no arrow;
+      else (no)
+        :one ..> per (declaration, target box), weak;
+        :pin the box's package in the file's import hints;
+      endif
+    repeat while (more uses?)
+  repeat while (more declarations?)
+  stop
+}
+@enduml

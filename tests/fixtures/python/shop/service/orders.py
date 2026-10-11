@@ -6,6 +6,7 @@ from shop.model.product import Money, Product
 from vendor.payments import PaymentGateway
 
 from ..model import base
+from ..util import pricing
 from ..util.helpers import Validator
 
 
@@ -46,6 +47,9 @@ class OrderService(BaseService, Auditable):
 
     def _check(self, product: Product) -> bool:
         return Validator.check(product)
+
+    def quote(self, items: list[Product]) -> Money:
+        return pricing.total_price(items)
 
 
 class Order(base.Entity):

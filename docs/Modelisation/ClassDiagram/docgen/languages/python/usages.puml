@@ -42,6 +42,10 @@ class usages <<module>> {
   # {static} _mentioned_in(Iterable[ast.AST]) : list[str]
   + {static} body_types(ast.ClassDef) : list[str]
   + {static} module_body_types(ast.Module) : list[str]
+  + {static} module_scopes(ast.Module) : list[ast.AST]
+  # {static} _dotted_name(ast.expr) : str | None
+  # {static} _module_use(ast.AST, ImportedNames) : ModuleUse | None
+  + {static} module_uses(Iterable[ast.AST], ImportedNames) : list[ModuleUse]
   + {static} newed_types(ast.ClassDef) : list[str]
 }
 }

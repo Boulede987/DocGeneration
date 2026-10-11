@@ -89,7 +89,12 @@ A `ParsedFile` holds:
 `Relation(source, arrow, target, level, multiplicity)` uses bare names and
 the arrows in `docgen.core.relations` (`INHERITS`, `REALIZES`, `COMPOSES`,
 `AGGREGATES`, `ASSOCIATES`, `DEPENDS`). `level` decides the views: base
-views show `INHERITANCE` and `STRONG`, full views everything.
+views show `INHERITANCE` and `STRONG`, full views everything. The core finds
+each end's package from its name (`hints`, then the project); when your
+language knows exactly where the target is declared, pass
+`target_package=` (`None` for no package) and the lookup is skipped —
+needed when the target shares its name with a declaration of the file
+itself (Python: `python/language.py` using `oo/language.py`).
 
 Stereotypes need a color: pass a `StereotypeStyle` for each of yours to
 `skinparam_lines` (`style.MODULE_STYLE` exists for module boxes).

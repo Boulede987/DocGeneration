@@ -14,17 +14,29 @@ FULL_DIAGRAM_DIR = "ClassDiagram-Full"
 FULL_FRAGMENT_DIR = "Fragments-Full"
 
 
+@dataclass(frozen=True)
+class EndPackages:
+    """The package each end of a relation resolved to (None = unknown or
+    no package, drawn outside any package)."""
+    source: str | None
+    target: str | None
+
+
+def _qualified(name: str, package: str | None) -> str:
+    return f"{package}.{name}" if package else name
+
+
 @dataclass
 class FileDiagram:
     """'package' is the file's grouping unit (None when it declares none).
-    relations are sorted by level; name_packages maps every name at either
-    end of a relation to the package it resolves to (None = unknown, drawn
-    outside any package)."""
+    relations are sorted by level; end_packages gives, for each relation,
+    where its ends are declared. Kept per relation, not per name: two
+    targets may share a name in different packages."""
     stem: str
     package: str | None
     inner_lines: list[str]
     relations: list[Relation]
-    name_packages: dict[str, str | None]
+    end_packages: dict[Relation, EndPackages]
 
     def base_relations(self) -> list[Relation]:
         return [relation for relation in self.relations if relation.level <= RelationLevel.STRONG]
@@ -32,15 +44,20 @@ class FileDiagram:
     def full_relations(self) -> list[Relation]:
         return list(self.relations)
 
-    def qualified_name(self, name: str) -> str:
-        package = self.name_packages.get(name)
-        return f"{package}.{name}" if package else name
+    def target_package(self, relation: Relation) -> str | None:
+        return self.end_packages[relation].target
+
+    def qualified_source(self, relation: Relation) -> str:
+        return _qualified(relation.source, self.end_packages[relation].source)
+
+    def qualified_target(self, relation: Relation) -> str:
+        return _qualified(relation.target, self.target_package(relation))
 
     def render_relations(self, relations: list[Relation]) -> list[str]:
         """Fully-qualified relation lines, so they land in the right package
         when emitted outside any namespace block."""
         return [
-            relation.render(self.qualified_name(relation.source), self.qualified_name(relation.target))
+            relation.render(self.qualified_source(relation), self.qualified_target(relation))
             for relation in relations
         ]
 

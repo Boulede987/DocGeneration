@@ -33,6 +33,14 @@ skinparam class {
 }
 
 namespace docgen.languages.python {
+class PythonTypeFacts <<dataclass>> {
+  + module_uses : ModuleUse[*]
+  + module_path : str | None
+}
+class ModuleIdentity <<dataclass>> {
+  + box_name : str
+  + module_path : str | None
+}
 class declarations <<module>> {
   + {static} ENUM_BASES
   + {static} PROTOCOL_BASE
@@ -49,11 +57,13 @@ class declarations <<module>> {
   # {static} _enum_member_names(ast.stmt) : list[str]
   # {static} _enum_values(ast.ClassDef) : list[str]
   # {static} _stereotype(frozenset[str]) : str | None
-  # {static} _declaration(ast.ClassDef, TypeVocabulary) : DeclarationWithFacts
-  + {static} class_declarations(ast.Module, TypeVocabulary) : list[DeclarationWithFacts]
-  + {static} module_declaration(ast.Module, str, TypeVocabulary) : DeclarationWithFacts | None
+  # {static} _declaration(ast.ClassDef, TypeVocabulary, ImportedNames) : DeclarationWithFacts
+  + {static} class_declarations(ast.Module, TypeVocabulary, ImportedNames) : list[DeclarationWithFacts]
+  + {static} module_declaration(ast.Module, ModuleIdentity, TypeVocabulary, ImportedNames) : DeclarationWithFacts | None
 }
 }
 
+docgen.languages.python.PythonTypeFacts --|> docgen.oo.TypeFacts
+docgen.languages.python.PythonTypeFacts *--> "0..*" docgen.languages.python.ModuleUse
 
 @enduml

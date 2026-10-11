@@ -31,3 +31,4 @@ class declarations <<module>> {
 }
 
 docgen.languages.java.declarations ..> docgen.languages.java.TypeHeader
+docgen.languages.java.declarations ..> docgen.clike.text_scan

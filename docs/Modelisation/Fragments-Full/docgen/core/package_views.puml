@@ -43,3 +43,6 @@ docgen.core.package_views ..> docgen.core.Relation
 docgen.core.package_views ..> docgen.core.StereotypeStyle
 docgen.core.package_views ..> docgen.core._PackageIndex
 docgen.core.package_views ..> docgen.core._ViewVariant
+docgen.core.package_views ..> docgen.core.puml
+docgen.core.package_views ..> docgen.core.relations
+docgen.core.package_views ..> docgen.core.file_diagram

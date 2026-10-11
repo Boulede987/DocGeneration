@@ -101,7 +101,7 @@ def _qualified_relation_lines(file_diagrams: list[FileDiagram], select_relations
 def _target_packages(file_diagram: FileDiagram, relations: list[Relation]) -> dict[str, str | None]:
     """Qualified name -> package, for each relation target."""
     return {
-        file_diagram.qualified_name(relation.target): file_diagram.name_packages.get(relation.target)
+        file_diagram.qualified_target(relation): file_diagram.target_package(relation)
         for relation in relations
     }
 
